@@ -1,71 +1,150 @@
-# MatchSimulation Architecture Document
+# MatchSimulation Architecture & Flow Document
 
-본 문서는 MatchSimulation 프로젝트의 Phase 1 기술 아키텍처 및 설계 원칙을 기술합니다.
+본 문서는 MatchSimulation 프로젝트의 기술 아키텍처와 서비스 흐름을 시각화하여 기술합니다.
 
-## 1. 시스템 아키텍처 개요
+## 1. 시스템 아키텍처 (System Architecture)
 
-본 프로젝트는 초기 MVP 단계의 빠른 검증을 위해 **Layered Architecture** 기반의 **Monolithic Spring Boot** 구조를 채택하였습니다.
+프로젝트는 표준 Layered Architecture를 따르며, Phase 1에서는 인메모리 저장소를 사용합니다.
 
-| 구성 요소 | 기술 스택 | 비고 |
-| :--- | :--- | :--- |
-| **API Layer** | Spring Web MVC | RESTful API 엔드포인트 제공 |
-| **Service Layer** | Spring Service | 비즈니스 로직 및 도메인 흐름 제어 |
-| **Repository Layer** | In-Memory (ConcurrentHashMap) | 데이터 영속성 모사 및 테스트 용이성 확보 |
-| **Domain Layer** | Java Entities (Lombok) | 핵심 비즈니스 모델 및 규칙 정의 |
+```mermaid
+graph TD
+    subgraph "Client Layer"
+        Web[Web Browser / Mobile App]
+    end
 
-## 2. 데이터 흐름 (Data Flow)
+    subgraph "API Layer (Controller)"
+        PC[ProfileController]
+        AC[AIController]
+        MC[MatchController]
+        ADC[AdminController]
+    end
 
-| 단계 | 흐름 설명 | 담당 컴포넌트 |
-| :--- | :--- | :--- |
-| **Request** | 클라이언트로부터 HTTP 요청 수신 및 DTO 검증 | Controller (API Layer) |
-| **Processing** | 비즈니스 로직 실행 및 도메인 객체 간 상호작용 | Service (Service Layer) |
-| **Persistence** | 메모리 기반 맵에 데이터 저장 및 조회 | Repository (Persistence Layer) |
-| **Response** | 처리 결과를 DTO로 변환하여 JSON 응답 반환 | Controller (API Layer) |
+    subgraph "Service Layer"
+        MS[MemberService]
+        AS[AIService]
+        MTS[MatchingService]
+    end
 
-## 3. 핵심 설계 패턴 및 원칙
+    subgraph "Persistence Layer (In-Memory)"
+        UR[UserRepository]
+        UPR[UserProfileRepository]
+        MR[MatchRepository]
+        CRR[ChatRoomRepository]
+    end
 
-### 3.1. 교차 매칭 알고리즘 (Double-Blind Match)
-상호 동의 하에만 연결되는 소개팅 서비스의 핵심 로직입니다.
+    Web --> PC
+    Web --> AC
+    Web --> MC
+    Web --> ADC
 
-| 프로세스 단계 | 상세 내용 |
-| :--- | :--- |
-| **Step 1: Save** | 유저 A가 유저 B를 선택하면 `Match` 객체 생성 및 저장 |
-| **Step 2: Check** | 리포지토리에서 `sender=B, receiver=A`인 데이터 존재 여부 즉시 조회 |
-| **Step 3: Resolve** | 상호 데이터 존재 시 `ChatRoom` 생성 및 매칭 확정 |
+    PC --> MS
+    AC --> AS
+    MC --> MTS
+    MC --> MS
+    ADC --> UR
 
-### 3.2. AI 시뮬레이션 인터페이스
-향후 실제 LLM 연동을 고려한 추상화 구조입니다.
-
-| 컴포넌트 | 역할 | 현재 구현 (Phase 1) |
-| :--- | :--- | :--- |
-| **AIService** | 대화 분석 및 피드백 로직 | 정적 규칙 기반 Mock 결과 반환 |
-| **Analysis DTO** | 분석 데이터 규격화 | 페르소나 및 점수 기반 JSON 구조 |
-
-## 4. 도메인 모델 설계 (ERD 논리 구조)
-
-| 모델명 | 주요 필드 | 설명 |
-| :--- | :--- | :--- |
-| **User** | id, email, password, role, status | 인증 및 권한 관리의 핵심 엔터티 |
-| **UserProfile** | userId, name, age, gender, job, location, aiResult | 유저별 상세 정보 및 AI 분석 데이터 저장 |
-| **Match** | id, senderId, receiverId, createdAt | 유저 간 단방향 호감 표시 기록 |
-| **ChatRoom** | id, user1Id, user2Id, createdAt | 매칭 성공 시 생성되는 1:1 대화 세션 |
-
-## 5. 인프라 및 배포 전략 (Phase 1)
-
-| 항목 | 내용 |
-| :--- | :--- |
-| **Runtime** | Java 17 / Spring Boot 3.3.0 |
-| **Build** | Gradle (Local Wrapper 사용) |
-| **Storage** | JVM Heap Memory (No External DB) |
-| **Environment** | 개발 및 테스트 통합 환경 |
+    MS --> UR
+    MS --> UPR
+    AS --> UPR
+    MTS --> MR
+    MTS --> CRR
+```
 
 ---
 
-## 6. 향후 아키텍처 확장 계획
+## 2. 서비스 핵심 플로우 (Service Flow)
 
-| 단계 | 확장 내용 | 목적 |
+사용자가 가입 후 실제 매칭에 이르기까지의 주요 여정입니다.
+
+```mermaid
+flowchart LR
+    Start((시작)) --> Onboarding[프로필 작성]
+    Onboarding --> Interview[AI 가치관 인터뷰]
+    Interview --> Search[회원 탐색 및 필터링]
+    Search --> Request[상대방 선택/매칭 요청]
+    Request --> Check{교차 매칭?}
+    Check -- No --> Wait[매칭 대기열 저장]
+    Check -- Yes --> Success[1:1 대화방 생성]
+    Success --> End((매칭 완료))
+```
+
+---
+
+## 3. 교차 매칭 시퀀스 (Matching Logic Sequence)
+
+상호 선택 시 대화방이 생성되는 백엔드 로직의 상세 흐름입니다.
+
+```mermaid
+sequenceDiagram
+    participant A as User A (Sender)
+    participant S as MatchingService
+    participant R as MatchRepository
+    participant C as ChatRoomRepository
+    participant B as User B (Receiver)
+
+    A->>S: requestMatch(A, B)
+    S->>R: save(Match A->B)
+    S->>R: findBySenderIdAndReceiverId(B, A)
+    
+    alt 역방향 매칭 존재함 (B가 이미 A를 선택)
+        R-->>S: Match Object Found
+        S->>C: save(ChatRoom A-B)
+        S-->>A: Match Success (True)
+        Note over A,B: 1:1 대화방 활성화
+    else 역방향 매칭 없음
+        R-->>S: Empty
+        S-->>A: Match Pending (False)
+    end
+```
+
+---
+
+## 4. 도메인 데이터 구조 (Logical ERD)
+
+```mermaid
+erDiagram
+    USER ||--|| USER_PROFILE : "has"
+    USER ||--o{ MATCH : "sends"
+    USER ||--o{ CHAT_ROOM : "participates"
+    
+    USER {
+        Long id PK
+        String email
+        String password
+        Enum role
+        Enum status
+    }
+    
+    USER_PROFILE {
+        Long userId FK
+        String name
+        Integer age
+        String job
+        String location
+        String aiResult
+    }
+    
+    MATCH {
+        Long id PK
+        Long senderId FK
+        Long receiverId FK
+        DateTime createdAt
+    }
+    
+    CHAT_ROOM {
+        Long id PK
+        Long user1Id FK
+        Long user2Id FK
+        DateTime createdAt
+    }
+```
+
+---
+
+## 5. 향후 확장 계획
+
+| 단계 | 내용 | 시각화 목표 |
 | :--- | :--- | :--- |
-| **Step 1** | MySQL / JPA 연동 | 데이터 영속성 및 트랜잭션 보장 |
-| **Step 2** | Spring Security 적용 | JWT 기반 인증 및 인가 고도화 |
-| **Step 3** | Gemini API 연동 | 실시간 AI 인터뷰 및 분석 엔진 고도화 |
-| **Step 4** | WebSocket / Redis | 실시간 채팅 서비스 확장 및 확장성 확보 |
+| **Phase 2** | DB 연동 | 외부 RDBMS(MySQL) 아이콘 및 연결선 추가 |
+| **Phase 3** | AI 고도화 | Gemini API External Cloud 연동 구조 |
+| **Phase 4** | 실시간성 | WebSocket / Redis Pub-Sub 레이어 추가 |
