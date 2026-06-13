@@ -146,5 +146,5 @@ erDiagram
 | 단계 | 내용 | 시각화 목표 |
 | :--- | :--- | :--- |
 | **Phase 2** | DB 연동 | 외부 RDBMS(MySQL) 아이콘 및 연결선 추가 |
-| **Phase 3** | AI 고도화 | Gemini API External Cloud 연동 구조 |
+| **Phase 3** | AI 고도화 | API External Cloud 연동 구조 |
 | **Phase 4** | 실시간성 | WebSocket / Redis Pub-Sub 레이어 추가 |
