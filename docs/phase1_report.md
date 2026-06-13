@@ -61,6 +61,3 @@
 - *초기 데이터는 `DataInitializer`에 의해 앱 시작 시 자동 로드됩니다.*
 
 ---
-
-## 5. 향후 계획 (Next Steps)
-- **Phase 2:** 실제 DB(H2/MySQL) 연동 및 JPA 적용.
