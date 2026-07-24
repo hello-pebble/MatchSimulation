@@ -20,56 +20,82 @@
 | Build | Gradle 9 (Wrapper) | BOM은 Gradle native platform 방식 |
 | 인증 | In-Memory 더미 토큰 (UUID) | Spring Security 미사용, `X-AUTH-TOKEN` 헤더 |
 
-## 2. 계층형 아키텍처 (Layered Architecture)
+## 2. 시스템 구성 — 모드별 아키텍처
+
+서비스는 **사용자 모드**와 **관리자 모드** 두 진입점으로 나뉘며,
+두 모드가 공통 영속 계층(H2 + Spring Data JPA)을 공유한다.
+모드별 기능/API 상세는 `docs/user_mode.md`, `docs/admin_mode.md` 참조.
+
+### 2.1 사용자 모드 (User Mode) — `/index.html`
 
 ```mermaid
 graph TD
-    subgraph "Presentation Layer"
-        FE[정적 테스트 콘솔<br/>index.html / admin.html]
-        AUC[AuthController]
-        MC[MatchingController]
-        QC[QnaController]
-        NC[NotificationController]
-        ADC[AdminController]
+    FE[회원 테스트 콘솔<br/>index.html]
+
+    subgraph "사용자 모드 Controller"
+        AUC[AuthController<br/>가입/로그인/내 정보]
+        MC[MatchingController<br/>추천/요청/응답/내 매칭]
+        QC[QnaController<br/>문의 등록/내 문의]
+        NC[NotificationController<br/>내 알림]
     end
 
-    subgraph "Service Layer"
-        AUS[AuthService<br/>+ TokenStore]
-        US[UserService]
+    subgraph "Service"
+        AUS[AuthService + TokenStore]
         MS[MatchingService]
         QS[QnaService]
         NS[NotificationService]
-        SS[AdminStatsService]
     end
 
-    subgraph "Extension Point (Interface + Adapter)"
-        ME{{MatchingEngine<br/>«interface»}}
+    subgraph "Extension Point (AI 연동 접점)"
+        ME{{MatchingEngine «interface»}}
         LME[LocalMatchingEngine<br/>규칙 기반 기본 구현]
         XME[ExternalAiMatchingEngine<br/>RestClient → 외부 AI 서버]
     end
 
-    subgraph "Persistence Layer (Spring Data JPA)"
-        UR[(UserRepository)]
-        MR[(MatchRecordRepository)]
-        QR[(QnaRepository)]
-        NR[(NotificationRepository)]
-        H2[(H2 In-Memory DB)]
-    end
-
-    FE --> AUC & MC & QC & NC & ADC
+    FE --> AUC & MC & QC & NC
     AUC --> AUS
-    ADC --> US & QS & NS & SS
     MC --> MS
     QC --> QS
     NC --> NS
     MS --> ME
     ME -.구현.- LME
     ME -.구현.- XME
-    AUS & US --> UR
-    MS --> UR & MR
-    QS --> QR
-    NS --> NR
-    SS --> MR & UR
+```
+
+### 2.2 관리자 모드 (Admin Mode) — `/admin.html`
+
+```mermaid
+graph TD
+    ADFE[관리자 콘솔<br/>admin.html — 통계 뷰어 포함]
+
+    ADC[AdminController<br/>Role=ADMIN 검사 - 아니면 403]
+
+    subgraph "Service"
+        US[UserService<br/>회원 목록/상태 변경]
+        AQS[QnaService<br/>문의 목록/답변 등록]
+        ANS[NotificationService<br/>알림 등록/목록]
+        SS[AdminStatsService<br/>일별·성별·상태별 매칭 통계]
+    end
+
+    ADFE --> ADC
+    ADC --> US & AQS & ANS & SS
+```
+
+### 2.3 공통 영속 계층 (Persistence — 두 모드 공유)
+
+```mermaid
+graph TD
+    SVC[사용자/관리자 모드 Service 계층]
+
+    subgraph "Persistence Layer (Spring Data JPA)"
+        UR[(UserRepository)]
+        MR[(MatchRecordRepository)]
+        QR[(QnaRepository)]
+        NR[(NotificationRepository)]
+        H2[(H2 In-Memory DB<br/>시드 데이터 자동 적재)]
+    end
+
+    SVC --> UR & MR & QR & NR
     UR & MR & QR & NR --> H2
 ```
 
