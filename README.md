@@ -34,7 +34,34 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | **관리자** | 회원 목록/상태 변경(승인·정지), Q&A 답변, 알림 등록(전체/개별), 일별·성별·상태별 매칭 통계 |
 | 확장성 | `MatchingEngine` 인터페이스 — `matching.engine=external-ai` 설정만으로 외부 AI 서버 연동 |
 
-## 4. 빠른 시작
+## 4. 모듈 구조 (package-by-feature)
+
+각 기능을 독립 모듈로 분리했으며, 모듈 내부는 `controller / service / repository / domain / dto`로 구성됩니다.
+
+```
+com.pebble.mvp
+├── common        # 공통 예외, JSON 에러 응답
+├── config        # H2 시드 데이터 초기화
+├── user          # 회원가입 / 로그인(더미 토큰) / 계정
+├── matching      # 추천, 매칭 요청/응답, 매칭 엔진(AI 연동 접점: matching.engine)
+├── qna           # 1:1 문의 (유저 등록, 관리자 답변)
+├── notification  # 공지/알림
+└── admin         # 관리자 회원관리 / QnA / 알림등록 / 매칭 통계
+```
+
+## 5. 주요 API 요약
+
+| 구분 | 메서드/경로 | 설명 |
+| :--- | :--- | :--- |
+| 인증 | POST /api/auth/signup, /login · GET /api/auth/me | 가입(PENDING) / 로그인(토큰) / 내 정보 |
+| 매칭 | GET /api/matching/recommendations · POST /api/matching/requests, /requests/{id}/respond · GET /api/matching/my | 추천 / 요청 / 수락·거절 / 내 매칭 |
+| QnA | POST /api/qna · GET /api/qna/my | 문의 등록 / 내 문의 |
+| 알림 | GET /api/notifications/my | 내 알림(전체 공지 + 개별) |
+| 관리자 | GET·PATCH /api/admin/users(/{id}/status) · GET·POST /api/admin/qna(/{id}/answer) · GET·POST /api/admin/notifications · GET /api/admin/stats/matches | 회원관리 / QnA 답변 / 알림 등록 / 매칭 통계 |
+
+인증이 필요한 API는 로그인 응답의 토큰을 `X-AUTH-TOKEN` 헤더로 전달합니다. 상세 명세는 [docs/api_spec.md](docs/api_spec.md) 참조.
+
+## 6. 빠른 시작
 
 ```bash
 ./gradlew bootRun     # http://localhost:8080
@@ -49,7 +76,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 
 샘플 계정: 관리자 `admin@match.com` / `admin1234`, 회원 `male1~10`·`female1~10@match.com` / `pass1234`
 
-## 5. 문서
+## 7. 문서
 
 | 문서 | 내용 |
 | :--- | :--- |
@@ -60,7 +87,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | [docs/api_spec.md](docs/api_spec.md) | API 명세서 (Endpoints, Request/Response) |
 | [docs/local_guide.md](docs/local_guide.md) | 로컬 실행 및 테스트 가이드 |
 
-## 6. 향후 개발 계획
+## 8. 향후 개발 계획
 
 | 단계 | 주요 작업 |
 | :--- | :--- |
