@@ -83,3 +83,11 @@ Response 200: `UserResponse[]`
 [{"userId":2,"name":"...","age":29,"gender":"FEMALE","job":"...",
   "location":"...","score":87.5,"reason":"AI 유사도 분석"}]
 ```
+
+## 5. 동작 화면
+
+| 화면 | 설명 |
+| :--- | :--- |
+| ![회원 관리](images/5_admin_users.png) | 전체 회원 조회 / 상태 변경 |
+| ![QnA 관리](images/6_admin_qna.png) | 답변 대기 조회 / 답변 등록 |
+| ![매칭 통계](images/7_admin_stats.png) | 매칭 현황 통계 — 성사율 카드 + 일별/성별/상태별 그래프 |

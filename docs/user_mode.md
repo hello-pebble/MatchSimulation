@@ -119,3 +119,12 @@ Response 200: 전체 공지 + 본인 대상 알림 (최신순)
 | 이메일 | 비밀번호 | 상태 |
 | :--- | :--- | :--- |
 | male1~10@match.com / female1~10@match.com | pass1234 | 1~8번 ACTIVE, 9번 PENDING, 10번 SUSPENDED |
+
+## 5. 동작 화면
+
+| 화면 | 설명 |
+| :--- | :--- |
+| ![로그인](images/1_user_login.png) | 로그인 성공 — 상단 배지에 로그인 사용자 표시 |
+| ![추천](images/2_user_recommendations.png) | 추천 받기 — 점수·추천 사유 포함 응답 |
+| ![매칭 요청](images/3_user_match_request.png) | 매칭 요청 — REQUESTED 생성 |
+| ![문의 등록](images/4_user_qna.png) | 문의 등록 — WAITING 상태 |
