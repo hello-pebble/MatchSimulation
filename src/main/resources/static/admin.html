@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MatchSimulation - 관리자 콘솔</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; margin: 0; background: #171c2b; color: #e6e9f5; }
+  header { background: #0f1320; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header a { color: #8fa0ff; text-decoration: none; font-size: 14px; }
+  main { max-width: 1100px; margin: 20px auto; padding: 0 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  section { background: #212842; border-radius: 10px; padding: 16px; }
+  section.wide { grid-column: 1 / -1; }
+  h2 { margin: 0 0 12px; font-size: 16px; color: #a8b6ff; border-bottom: 1px solid #35406b; padding-bottom: 8px; }
+  input, select, textarea { width: 100%; padding: 8px; margin: 4px 0; border: 1px solid #35406b; border-radius: 6px; background: #171c2b; color: #e6e9f5; font-size: 14px; }
+  button { background: #5b6cff; color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; margin: 6px 4px 0 0; cursor: pointer; font-size: 14px; }
+  button:hover { background: #4353d9; }
+  pre { background: #0b0f1c; color: #9ef59e; font-size: 12px; padding: 12px; border-radius: 8px; overflow: auto; max-height: 280px; white-space: pre-wrap; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .badge { display: inline-block; background: #35406b; border-radius: 20px; padding: 2px 10px; font-size: 12px; margin-left: 8px; }
+  .bar-wrap { margin: 6px 0; font-size: 12px; }
+  .bar { height: 18px; background: linear-gradient(90deg,#5b6cff,#8fa0ff); border-radius: 4px; color:#fff; padding: 1px 6px; min-width: 18px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+  .stat { background: #171c2b; border-radius: 8px; padding: 10px; text-align: center; }
+  .stat b { font-size: 22px; color: #8fa0ff; display: block; }
+</style>
+</head>
+<body>
+<header>
+  <strong>MatchSimulation 관리자 콘솔</strong>
+  <span id="who" class="badge">관리자 로그인 필요</span>
+  <a href="/index.html">→ 회원 콘솔</a>
+</header>
+<main>
+  <section>
+    <h2>관리자 로그인</h2>
+    <div class="row"><input id="li-email" value="admin@match.com"><input id="li-pass" value="admin1234"></div>
+    <button onclick="login()">로그인</button>
+  </section>
+
+  <section>
+    <h2>회원 관리</h2>
+    <button onclick="call('GET','/api/admin/users')">전체 회원 조회</button>
+    <div class="row">
+      <input id="u-id" type="number" placeholder="userId">
+      <select id="u-status">
+        <option value="ACTIVE">승인 (ACTIVE)</option>
+        <option value="SUSPENDED">정지 (SUSPENDED)</option>
+        <option value="PENDING">대기 (PENDING)</option>
+      </select>
+      <button onclick="call('PATCH','/api/admin/users/'+v('u-id')+'/status',{status:v('u-status')})">상태 변경</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Q&A 관리</h2>
+    <button onclick="call('GET','/api/admin/qna')">전체 문의</button>
+    <button onclick="call('GET','/api/admin/qna?status=WAITING')">답변 대기</button>
+    <div class="row"><input id="q-id" type="number" placeholder="qnaId"></div>
+    <textarea id="q-answer" rows="2" placeholder="답변 내용">확인 후 안내드리겠습니다.</textarea>
+    <button onclick="call('POST','/api/admin/qna/'+v('q-id')+'/answer',{answer:v('q-answer')})">답변 등록</button>
+  </section>
+
+  <section>
+    <h2>알림 등록</h2>
+    <input id="n-target" type="number" placeholder="대상 userId (비우면 전체 공지)">
+    <input id="n-title" placeholder="제목" value="점검 안내">
+    <textarea id="n-msg" rows="2" placeholder="내용">오늘 밤 12시에 서버 점검이 있습니다.</textarea>
+    <button onclick="createNotification()">알림 생성</button>
+    <button onclick="call('GET','/api/admin/notifications')">알림 목록</button>
+  </section>
+
+  <section class="wide">
+    <h2>매칭 현황 통계</h2>
+    <button onclick="loadStats()">통계 새로고침</button>
+    <div id="stats"></div>
+  </section>
+
+  <section class="wide">
+    <h2>API 응답</h2>
+    <pre id="out">여기에 결과가 표시됩니다.</pre>
+  </section>
+</main>
+<script>
+let token = sessionStorage.getItem('adminToken') || '';
+updateWho(sessionStorage.getItem('adminWho'));
+
+function v(id) { return document.getElementById(id).value; }
+function updateWho(name) {
+  document.getElementById('who').textContent = name ? name + ' 로그인됨' : '관리자 로그인 필요';
+}
+function show(data) {
+  document.getElementById('out').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+}
+async function call(method, url, body) {
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'X-AUTH-TOKEN': token },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await res.json().catch(() => ({ status: res.status }));
+    show({ httpStatus: res.status, ...(Array.isArray(data) ? { result: data } : data) });
+    return res.ok ? data : null;
+  } catch (e) { show('요청 실패: ' + e.message); }
+}
+async function login() {
+  const data = await call('POST', '/api/auth/login', { email: v('li-email'), password: v('li-pass') });
+  if (data && data.token) {
+    token = data.token;
+    sessionStorage.setItem('adminToken', token);
+    sessionStorage.setItem('adminWho', data.user.name);
+    updateWho(data.user.name);
+  }
+}
+function createNotification() {
+  const target = v('n-target');
+  call('POST', '/api/admin/notifications', {
+    targetUserId: target ? +target : null, title: v('n-title'), message: v('n-msg')
+  });
+}
+function bars(title, map) {
+  const entries = Object.entries(map || {});
+  const max = Math.max(1, ...entries.map(([, c]) => c));
+  const rows = entries.map(([k, c]) =>
+    `<div class="bar-wrap">${k}<div class="bar" style="width:${(c / max) * 100}%">${c}건</div></div>`).join('');
+  return `<div style="flex:1;min-width:200px"><h3 style="font-size:14px;color:#a8b6ff">${title}</h3>${rows || '데이터 없음'}</div>`;
+}
+async function loadStats() {
+  const s = await call('GET', '/api/admin/stats/matches');
+  if (!s) return;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat"><b>${s.totalMatches}</b>전체 매칭</div>
+      <div class="stat"><b>${s.acceptedMatches}</b>성사(수락)</div>
+      <div class="stat"><b>${s.acceptanceRate}%</b>성사율</div>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      ${bars('일별 매칭', s.daily)}
+      ${bars('성별(요청자)', s.byGender)}
+      ${bars('상태별', s.byStatus)}
+    </div>`;
+}
+</script>
+</body>
+</html>
