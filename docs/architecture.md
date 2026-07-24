@@ -73,45 +73,57 @@ graph TD
     UR & MR & QR & NR --> H2
 ```
 
-## 3. 패키지 구조
+## 3. 패키지 구조 — 기능별 모듈(package-by-feature)
+
+기능 단위로 모듈을 분리했다. 각 모듈은 내부에 `controller / service / repository /
+domain / dto` 를 가지며, 모듈 간 참조를 최소화해 추후 Gradle 멀티모듈이나
+마이크로서비스로 분리하기 쉽게 했다.
 
 ```
 com.pebble.mvp
 ├── MatchSimulationApplication.java
+├── common/                          # 공통 인프라 모듈
+│   ├── ApiException.java            # 상태코드 포함 비즈니스 예외
+│   └── GlobalExceptionHandler.java  # @RestControllerAdvice → JSON 에러 응답
 ├── config/
-│   ├── DataInitializer.java        # H2 시드 데이터 적재 (CommandLineRunner)
-│   └── MatchingEngineConfig.java   # 엔진 선택 프로퍼티 바인딩
-├── common/
-│   ├── ApiException.java           # 상태코드 포함 비즈니스 예외
-│   └── GlobalExceptionHandler.java # @RestControllerAdvice → JSON 에러 응답
-├── controller/                     # Presentation Layer
-│   ├── AuthController.java         # 회원가입 / 로그인 / 내 정보
-│   ├── MatchingController.java     # 추천 / 매칭 요청 / 응답 / 내 매칭
-│   ├── QnaController.java          # 문의 등록 / 내 문의
-│   ├── NotificationController.java # 내 알림
-│   └── AdminController.java        # 회원관리 / QnA관리 / 알림등록 / 통계
-├── service/                        # Business Layer
-│   ├── AuthService.java            # 더미 토큰 발급·검증, 권한 확인
-│   ├── TokenStore.java             # ConcurrentHashMap 기반 토큰 저장소
-│   ├── UserService.java
-│   ├── MatchingService.java
-│   ├── QnaService.java
-│   ├── NotificationService.java
-│   ├── AdminStatsService.java      # 일별/성별/상태별 매칭 통계
-│   └── matching/                   # ★ 확장 접점
-│       ├── MatchingEngine.java             # 인터페이스
-│       ├── ScoredCandidate.java            # 추천 결과 record
-│       ├── LocalMatchingEngine.java        # 기본(규칙 기반) 어댑터
-│       └── ExternalAiMatchingEngine.java   # 외부 AI 서버 어댑터
-├── domain/                         # JPA Entity + Enum
-│   ├── User.java  MatchRecord.java  Qna.java  Notification.java
-│   └── enums/ (Role, UserStatus, Gender, MatchStatus, QnaStatus)
-├── dto/                            # Java Record 기반 요청/응답 DTO
-└── repository/                     # Spring Data JPA Repository 4종
+│   └── DataInitializer.java         # H2 시드 데이터 적재 (CommandLineRunner)
+├── user/                            # 회원 모듈 (인증·계정)
+│   ├── controller/AuthController    # 회원가입 / 로그인 / 내 정보
+│   ├── service/  AuthService, TokenStore, UserService
+│   ├── domain/   User, Role, UserStatus, Gender
+│   ├── repository/UserRepository
+│   └── dto/      AuthDtos (record)
+├── matching/                        # 매칭 모듈
+│   ├── controller/MatchingController # 추천 / 매칭 요청 / 응답 / 내 매칭
+│   ├── service/  MatchingService
+│   ├── engine/                      # ★ AI 연동 확장 접점
+│   │   ├── MatchingEngine.java             # 인터페이스
+│   │   ├── ScoredCandidate.java            # 추천 결과 record
+│   │   ├── LocalMatchingEngine.java        # 기본(규칙 기반) 어댑터
+│   │   └── ExternalAiMatchingEngine.java   # 외부 AI 서버 어댑터
+│   ├── domain/   MatchRecord, MatchStatus
+│   ├── repository/MatchRecordRepository
+│   └── dto/      MatchingDtos
+├── qna/                             # QnA 모듈
+│   ├── controller/QnaController     # 문의 등록 / 내 문의
+│   ├── service/  QnaService
+│   ├── domain/   Qna, QnaStatus
+│   ├── repository/QnaRepository
+│   └── dto/      QnaDtos
+├── notification/                    # 알림 모듈
+│   ├── controller/NotificationController # 내 알림
+│   ├── service/  NotificationService
+│   ├── domain/   Notification
+│   ├── repository/NotificationRepository
+│   └── dto/      NotificationDtos
+└── admin/                           # 관리자 모듈
+    ├── controller/AdminController   # 회원관리 / QnA관리 / 알림등록 / 통계
+    ├── service/  AdminStatsService  # 일별/성별/상태별 매칭 통계
+    └── dto/      AdminDtos
 ```
 
-> 계층형 구조를 기본으로 하되, 확장 접점(`service.matching`)만 별도 하위 패키지로
-> 분리하여 어댑터 교체가 한 곳에서 일어나도록 했다.
+> 확장 접점(`matching.engine`)은 인터페이스/어댑터로 분리되어 있어
+> 외부 AI 서버 연동 시 어댑터 교체가 한 곳에서 일어난다.
 
 ## 4. 주요 컴포넌트 역할
 

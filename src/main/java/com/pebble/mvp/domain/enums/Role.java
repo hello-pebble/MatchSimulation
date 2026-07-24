@@ -1,5 +1,0 @@
-package com.pebble.mvp.domain.enums;
-
-public enum Role {
-    USER, ADMIN
-}

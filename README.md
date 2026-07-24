@@ -10,7 +10,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | :--- | :--- |
 | 프로젝트명 | MatchSimulation |
 | 개발 단계 | Phase 2 (기술스택 업그레이드 + 관리자 모드 구현 완료) |
-| 아키텍처 | 계층형(Layered) 아키텍처 + 매칭 엔진 Interface/Adapter 확장 구조 |
+| 아키텍처 | 기능별 모듈(package-by-feature) 구조 + 매칭 엔진 Interface/Adapter 확장 구조 |
 
 ## 2. 기술 스택
 
@@ -53,7 +53,9 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 
 | 문서 | 내용 |
 | :--- | :--- |
-| [docs/architecture.md](docs/architecture.md) | 아키텍처 설계서 (패키지 구조, 컴포넌트 역할, AI 연동 접점) |
+| [docs/phase2_plan.md](docs/phase2_plan.md) | Phase 2 시작 전 계획 문서 (목표, 설계 방향) |
+| [docs/phase2_report.md](docs/phase2_report.md) | Phase 2 완료 보고 문서 (구현 결과, 검증 내역) |
+| [docs/architecture.md](docs/architecture.md) | 아키텍처 설계서 (모듈 구조, 컴포넌트 역할, AI 연동 접점) |
 | [docs/functional_spec.md](docs/functional_spec.md) | 기능 명세서 |
 | [docs/api_spec.md](docs/api_spec.md) | API 명세서 (Endpoints, Request/Response) |
 | [docs/local_guide.md](docs/local_guide.md) | 로컬 실행 및 테스트 가이드 |

@@ -1,14 +1,18 @@
 package com.pebble.mvp.config;
 
-import com.pebble.mvp.domain.MatchRecord;
-import com.pebble.mvp.domain.Notification;
-import com.pebble.mvp.domain.Qna;
-import com.pebble.mvp.domain.User;
-import com.pebble.mvp.domain.enums.*;
-import com.pebble.mvp.repository.MatchRecordRepository;
-import com.pebble.mvp.repository.NotificationRepository;
-import com.pebble.mvp.repository.QnaRepository;
-import com.pebble.mvp.repository.UserRepository;
+import com.pebble.mvp.matching.domain.MatchRecord;
+import com.pebble.mvp.notification.domain.Notification;
+import com.pebble.mvp.qna.domain.Qna;
+import com.pebble.mvp.user.domain.User;
+import com.pebble.mvp.user.domain.Gender;
+import com.pebble.mvp.user.domain.Role;
+import com.pebble.mvp.user.domain.UserStatus;
+import com.pebble.mvp.matching.domain.MatchStatus;
+import com.pebble.mvp.qna.domain.QnaStatus;
+import com.pebble.mvp.matching.repository.MatchRecordRepository;
+import com.pebble.mvp.notification.repository.NotificationRepository;
+import com.pebble.mvp.qna.repository.QnaRepository;
+import com.pebble.mvp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

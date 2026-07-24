@@ -1,8 +1,8 @@
 package com.pebble.mvp;
 
-import com.pebble.mvp.dto.AdminDtos.MatchStatsResponse;
-import com.pebble.mvp.repository.UserRepository;
-import com.pebble.mvp.service.AdminStatsService;
+import com.pebble.mvp.admin.dto.AdminDtos.MatchStatsResponse;
+import com.pebble.mvp.user.repository.UserRepository;
+import com.pebble.mvp.admin.service.AdminStatsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
