@@ -59,7 +59,7 @@ com.pebble.mvp
 | 알림 | GET /api/notifications/my | 내 알림(전체 공지 + 개별) |
 | 관리자 | GET·PATCH /api/admin/users(/{id}/status) · GET·POST /api/admin/qna(/{id}/answer) · GET·POST /api/admin/notifications · GET /api/admin/stats/matches | 회원관리 / QnA 답변 / 알림 등록 / 매칭 통계 |
 
-인증이 필요한 API는 로그인 응답의 토큰을 `X-AUTH-TOKEN` 헤더로 전달합니다. 상세 명세는 [docs/api_spec.md](docs/api_spec.md) 참조.
+인증이 필요한 API는 로그인 응답의 토큰을 `X-AUTH-TOKEN` 헤더로 전달합니다. 상세 명세는 [docs/user_mode.md](docs/user_mode.md), [docs/admin_mode.md](docs/admin_mode.md) 참조.
 
 ## 6. 빠른 시작
 
@@ -83,8 +83,9 @@ com.pebble.mvp
 | [docs/phase2_plan.md](docs/phase2_plan.md) | Phase 2 시작 전 계획 문서 (목표, 설계 방향) |
 | [docs/phase2_report.md](docs/phase2_report.md) | Phase 2 완료 보고 문서 (구현 결과, 검증 내역) |
 | [docs/architecture.md](docs/architecture.md) | 아키텍처 설계서 (모듈 구조, 컴포넌트 역할, AI 연동 접점) |
-| [docs/functional_spec.md](docs/functional_spec.md) | 기능 명세서 |
-| [docs/api_spec.md](docs/api_spec.md) | API 명세서 (Endpoints, Request/Response) |
+| [docs/usecase.md](docs/usecase.md) | 유즈케이스 문서 (사용자/관리자 모드별 유즈케이스 + 시나리오) |
+| [docs/user_mode.md](docs/user_mode.md) | 사용자 모드 문서 (기능 명세 + API + 콘솔 시나리오) |
+| [docs/admin_mode.md](docs/admin_mode.md) | 관리자 모드 문서 (기능 명세 + API + AI 연동 계약) |
 | [docs/local_guide.md](docs/local_guide.md) | 로컬 실행 및 테스트 가이드 |
 
 ## 8. 향후 개발 계획

@@ -41,7 +41,7 @@
 - 관리자: 회원 목록 / 상태 변경(승인·정지) / QnA 목록·답변 / 알림 등록(전체·개별) /
   매칭 통계(총 건수, 성사율, 일별·성별·상태별 분포)
 
-전체 명세는 [api_spec.md](api_spec.md) 참고.
+전체 명세는 [user_mode.md](user_mode.md), [admin_mode.md](admin_mode.md) 참고.
 
 ## 3. 검증 결과
 
