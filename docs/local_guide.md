@@ -84,4 +84,4 @@ matching:
 ```
 
 재기동하면 추천 API가 외부 서버(`POST /api/v1/recommend`)를 호출합니다.
-요청/응답 계약은 `docs/api_spec.md` 5장 참조.
+요청/응답 계약은 `docs/admin_mode.md` 4장 참조.

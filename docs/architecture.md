@@ -5,7 +5,7 @@
 
 본 문서는 매칭 애플리케이션 백엔드 + 관리자(Admin) 모드의 아키텍처 설계서입니다.
 구현 전(Phase 1 문서화) 단계에서 작성되었으며, 구현 완료 후 기능/API 명세는
-`docs/functional_spec.md`, `docs/api_spec.md`를 참조하십시오.
+`docs/user_mode.md`(사용자 모드), `docs/admin_mode.md`(관리자 모드)를 참조하십시오.
 
 ---
 
