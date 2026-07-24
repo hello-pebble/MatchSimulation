@@ -1,8 +1,6 @@
 package com.pebble.mvp.domain;
 
-import com.pebble.mvp.domain.enums.Gender;
-import com.pebble.mvp.domain.enums.Role;
-import com.pebble.mvp.domain.enums.UserStatus;
+import com.pebble.mvp.domain.enums.QnaStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,44 +11,36 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "qna")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Qna {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(nullable = false)
+    private Long userId;
 
     @Column(nullable = false)
-    private String password;
+    private String title;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(nullable = false, length = 2000)
+    private String question;
 
-    private Integer age;
-
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
-
-    private String job;
-
-    private String location;
+    @Column(length = 2000)
+    private String answer;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status;
+    private QnaStatus status;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    private LocalDateTime answeredAt;
 }

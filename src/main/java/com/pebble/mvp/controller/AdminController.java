@@ -1,48 +1,93 @@
 package com.pebble.mvp.controller;
 
-import com.pebble.mvp.domain.User;
-import com.pebble.mvp.domain.enums.UserStatus;
-import com.pebble.mvp.repository.ChatRoomRepository;
-import com.pebble.mvp.repository.MatchRepository;
-import com.pebble.mvp.repository.UserRepository;
+import com.pebble.mvp.domain.enums.QnaStatus;
+import com.pebble.mvp.dto.AdminDtos.MatchStatsResponse;
+import com.pebble.mvp.dto.AdminDtos.StatusChangeRequest;
+import com.pebble.mvp.dto.AuthDtos.UserResponse;
+import com.pebble.mvp.dto.NotificationDtos.NotificationCreateRequest;
+import com.pebble.mvp.dto.NotificationDtos.NotificationResponse;
+import com.pebble.mvp.dto.QnaDtos.QnaAnswerRequest;
+import com.pebble.mvp.dto.QnaDtos.QnaResponse;
+import com.pebble.mvp.service.AdminStatsService;
+import com.pebble.mvp.service.AuthService;
+import com.pebble.mvp.service.NotificationService;
+import com.pebble.mvp.service.QnaService;
+import com.pebble.mvp.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * 관리자 모드 API. 모든 엔드포인트는 X-AUTH-TOKEN의 Role=ADMIN 검사를 거친다.
+ */
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 public class AdminController {
-    private final UserRepository userRepository;
-    private final MatchRepository matchRepository; // Assuming we add a way to count matches
-    private final ChatRoomRepository chatRoomRepository; // Assuming we add a way to count chat rooms
 
-    @GetMapping("/dashboard")
-    public ResponseEntity<Map<String, Object>> getDashboardStats() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalUsers", userRepository.findAll().size());
-        // For simplicity, we'll just count what's in the repositories if we had a count method, 
-        // but since they are in-memory maps, we can use findAll().size() if we add findAll() to all.
-        // Let's add count or findAll to MatchRepository and ChatRoomRepository if needed.
-        return ResponseEntity.ok(stats);
-    }
+    private final AuthService authService;
+    private final UserService userService;
+    private final QnaService qnaService;
+    private final NotificationService notificationService;
+    private final AdminStatsService adminStatsService;
+
+    // ── 회원 관리 ──────────────────────────────────────────────
 
     @GetMapping("/users")
-    public ResponseEntity<List<User>> getUserList() {
-        return ResponseEntity.ok(userRepository.findAll());
+    public List<UserResponse> users(@RequestHeader("X-AUTH-TOKEN") String token) {
+        authService.requireAdmin(token);
+        return userService.findAll();
     }
 
-    @PostMapping("/users/{userId}/ban")
-    public ResponseEntity<User> banUser(@PathVariable Long userId) {
-        return userRepository.findById(userId)
-                .map(user -> {
-                    user.setStatus(UserStatus.BANNED);
-                    return ResponseEntity.ok(userRepository.save(user));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @PatchMapping("/users/{userId}/status")
+    public UserResponse changeStatus(@RequestHeader("X-AUTH-TOKEN") String token,
+                                     @PathVariable Long userId,
+                                     @Valid @RequestBody StatusChangeRequest request) {
+        authService.requireAdmin(token);
+        return userService.changeStatus(userId, request.status());
+    }
+
+    // ── Q&A 관리 ──────────────────────────────────────────────
+
+    @GetMapping("/qna")
+    public List<QnaResponse> qnaList(@RequestHeader("X-AUTH-TOKEN") String token,
+                                     @RequestParam(required = false) QnaStatus status) {
+        authService.requireAdmin(token);
+        return qnaService.findAll(status);
+    }
+
+    @PostMapping("/qna/{qnaId}/answer")
+    public QnaResponse answer(@RequestHeader("X-AUTH-TOKEN") String token,
+                              @PathVariable Long qnaId,
+                              @Valid @RequestBody QnaAnswerRequest request) {
+        authService.requireAdmin(token);
+        return qnaService.answer(qnaId, request.answer());
+    }
+
+    // ── 알림 등록 ──────────────────────────────────────────────
+
+    @PostMapping("/notifications")
+    @ResponseStatus(HttpStatus.CREATED)
+    public NotificationResponse createNotification(@RequestHeader("X-AUTH-TOKEN") String token,
+                                                   @Valid @RequestBody NotificationCreateRequest request) {
+        authService.requireAdmin(token);
+        return notificationService.create(request);
+    }
+
+    @GetMapping("/notifications")
+    public List<NotificationResponse> notifications(@RequestHeader("X-AUTH-TOKEN") String token) {
+        authService.requireAdmin(token);
+        return notificationService.findAll();
+    }
+
+    // ── 매칭 현황 통계 ─────────────────────────────────────────
+
+    @GetMapping("/stats/matches")
+    public MatchStatsResponse matchStats(@RequestHeader("X-AUTH-TOKEN") String token) {
+        authService.requireAdmin(token);
+        return adminStatsService.matchStats();
     }
 }

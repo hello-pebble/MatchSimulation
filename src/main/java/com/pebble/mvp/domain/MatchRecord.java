@@ -1,8 +1,6 @@
 package com.pebble.mvp.domain;
 
-import com.pebble.mvp.domain.enums.Gender;
-import com.pebble.mvp.domain.enums.Role;
-import com.pebble.mvp.domain.enums.UserStatus;
+import com.pebble.mvp.domain.enums.MatchStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,43 +11,29 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "match_records")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class MatchRecord {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(nullable = false)
+    private Long requesterId;
 
     @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false)
-    private String name;
-
-    private Integer age;
-
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
-
-    private String job;
-
-    private String location;
+    private Long partnerId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role;
+    private MatchStatus status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status;
+    private Double score;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
