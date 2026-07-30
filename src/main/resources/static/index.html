@@ -53,7 +53,12 @@
   <section>
     <h2>3. 매칭</h2>
     <button onclick="call('GET','/api/matching/recommendations')">추천 받기</button>
-    <button onclick="call('GET','/api/matching/my')">내 매칭 목록</button>
+    <div class="row">
+      <input id="mm-page" type="number" value="0" min="0" title="page">
+      <button onclick="loadMyMatches(0)">내 매칭 목록</button>
+      <button onclick="loadMyMatches(-1)">◀ 이전</button>
+      <button onclick="loadMyMatches(1)">다음 ▶</button>
+    </div>
     <div class="row">
       <input id="m-partner" type="number" placeholder="상대 userId">
       <button onclick="call('POST','/api/matching/requests',{partnerId:+v('m-partner')})">매칭 요청</button>
@@ -101,6 +106,11 @@ async function call(method, url, body) {
     show({ httpStatus: res.status, ...(Array.isArray(data) ? { result: data } : data) });
     return data;
   } catch (e) { show('요청 실패: ' + e.message); }
+}
+function loadMyMatches(delta) {
+  const el = document.getElementById('mm-page');
+  if (delta !== 0) el.value = Math.max(0, (+el.value || 0) + delta);
+  call('GET', `/api/matching/my?page=${el.value}&size=5&sort=createdAt,desc`);
 }
 async function signup() {
   await call('POST', '/api/auth/signup', {

@@ -6,8 +6,12 @@ import com.pebble.mvp.matching.dto.MatchingDtos.MatchResponse;
 import com.pebble.mvp.user.service.AuthService;
 import com.pebble.mvp.matching.service.MatchingService;
 import com.pebble.mvp.matching.engine.ScoredCandidate;
+import com.pebble.mvp.common.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,7 +45,9 @@ public class MatchingController {
     }
 
     @GetMapping("/my")
-    public List<MatchResponse> myMatches(@RequestHeader("X-AUTH-TOKEN") String token) {
-        return matchingService.myMatches(authService.authenticate(token));
+    public PageResponse<MatchResponse> myMatches(@RequestHeader("X-AUTH-TOKEN") String token,
+                                                 @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC)
+                                                 Pageable pageable) {
+        return matchingService.myMatches(authService.authenticate(token), pageable);
     }
 }
