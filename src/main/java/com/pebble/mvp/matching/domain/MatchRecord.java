@@ -35,6 +35,10 @@ public class MatchRecord {
 
     private Double score;
 
+    /** 낙관적 락 — 동시 응답 경쟁 시 한쪽만 커밋 허용 */
+    @Version
+    private Long version;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 }

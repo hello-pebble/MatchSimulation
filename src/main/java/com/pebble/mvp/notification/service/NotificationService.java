@@ -33,6 +33,19 @@ public class NotificationService {
         return NotificationResponse.from(notification);
     }
 
+    /**
+     * 서비스 내부용 알림 생성 (매칭 성사, 회원 상태 변경 등).
+     * 호출자의 트랜잭션에 참여하므로, 호출 측이 롤백되면 알림도 함께 롤백된다.
+     */
+    public void notify(Long targetUserId, String title, String message) {
+        notificationRepository.save(Notification.builder()
+                .targetUserId(targetUserId)
+                .title(title)
+                .message(message)
+                .createdAt(LocalDateTime.now())
+                .build());
+    }
+
     /** 전체 공지(targetUserId=null) + 본인 대상 알림 */
     public List<NotificationResponse> myNotifications(User me) {
         return notificationRepository

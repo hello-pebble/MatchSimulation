@@ -83,7 +83,8 @@ Response 200: `UserResponse`
 {"accept":true}
 // Response 200 — status가 ACCEPTED 또는 REJECTED로 변경된 MatchResponse
 ```
-- 403: 요청 받은 본인이 아님 · 400: 이미 처리됨
+- 403: 요청 받은 본인이 아님 · 400: 이미 처리됨 · **409: 동시 응답 경쟁에서 밀림(낙관적 락)**
+- 수락 성공 시 요청자/수락자 양측에 알림이 생성된다 (상태 변경과 같은 트랜잭션 — 실패 시 함께 롤백)
 
 ### GET /api/matching/my — 내 매칭 목록 🔒 (페이징)
 - 파라미터: `?page=0&size=10&sort=createdAt,desc` (size 최대 100, 기본 최신순)

@@ -10,6 +10,7 @@ import com.pebble.mvp.matching.domain.MatchStatus;
 import com.pebble.mvp.user.domain.UserStatus;
 import com.pebble.mvp.matching.dto.MatchingDtos.MatchResponse;
 import com.pebble.mvp.matching.repository.MatchRecordRepository;
+import com.pebble.mvp.notification.service.NotificationService;
 import com.pebble.mvp.user.repository.UserRepository;
 import com.pebble.mvp.matching.engine.MatchingEngine;
 import com.pebble.mvp.matching.engine.ScoredCandidate;
@@ -31,6 +32,7 @@ public class MatchingService {
     private final UserRepository userRepository;
     private final MatchRecordRepository matchRecordRepository;
     private final MatchingEngine matchingEngine;
+    private final NotificationService notificationService;
 
     /** ACTIVE 상태의 이성 회원을 후보로 매칭 엔진에 위임 */
     public List<ScoredCandidate> recommend(User me) {
@@ -73,7 +75,12 @@ public class MatchingService {
         return toResponse(record);
     }
 
-    /** 매칭 요청을 받은 상대(partner)만 수락/거절할 수 있다 */
+    /**
+     * 매칭 요청을 받은 상대(partner)만 수락/거절할 수 있다.
+     * 수락 시 상태 전이와 양측 알림 생성이 하나의 트랜잭션으로 묶인다 —
+     * 알림 저장이 실패하면 상태 변경도 롤백된다.
+     * 동시 응답 경쟁은 MatchRecord의 @Version 낙관적 락으로 차단된다(409).
+     */
     @Transactional
     public MatchResponse respond(User me, Long matchId, boolean accept) {
         MatchRecord record = matchRecordRepository.findById(matchId)
@@ -85,6 +92,14 @@ public class MatchingService {
             throw ApiException.badRequest("이미 처리된 매칭입니다. 상태: " + record.getStatus());
         }
         record.setStatus(accept ? MatchStatus.ACCEPTED : MatchStatus.REJECTED);
+        if (accept) {
+            String partnerName = nameOf(record.getPartnerId());
+            String requesterName = nameOf(record.getRequesterId());
+            notificationService.notify(record.getRequesterId(),
+                    "매칭이 성사되었습니다!", partnerName + "님이 매칭 요청을 수락했습니다.");
+            notificationService.notify(record.getPartnerId(),
+                    "매칭 수락 완료", requesterName + "님과의 매칭이 성사되었습니다.");
+        }
         return toResponse(record);
     }
 
