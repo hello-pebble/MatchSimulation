@@ -38,6 +38,8 @@ Base URL: `http://localhost:8080` · 모든 API는 관리자 토큰 `X-AUTH-TOKE
 {"status":"ACTIVE"}   // PENDING | ACTIVE | SUSPENDED
 // Response 200 — 변경된 UserResponse
 ```
+- 부수효과: ACTIVE 변경 시 "회원 승인 완료", SUSPENDED 변경 시 "계정 정지 안내" 알림이
+  같은 트랜잭션으로 생성된다 (알림 실패 시 상태 변경도 롤백)
 
 ### GET /api/admin/qna?status=WAITING — 문의 목록 (페이징)
 - `status` 생략 시 전체, `WAITING`/`ANSWERED` 필터 가능
