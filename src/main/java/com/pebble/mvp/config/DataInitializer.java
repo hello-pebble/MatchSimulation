@@ -13,6 +13,7 @@ import com.pebble.mvp.matching.repository.MatchRecordRepository;
 import com.pebble.mvp.notification.repository.NotificationRepository;
 import com.pebble.mvp.qna.repository.QnaRepository;
 import com.pebble.mvp.user.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -36,6 +37,7 @@ public class DataInitializer implements CommandLineRunner {
     private final MatchRecordRepository matchRecordRepository;
     private final QnaRepository qnaRepository;
     private final NotificationRepository notificationRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private static final String[] MALE_NAMES = {"김민준", "이서준", "박도윤", "최시우", "정하준", "강지호", "조은우", "윤선우", "임유준", "한준서"};
     private static final String[] FEMALE_NAMES = {"김서연", "이하은", "박지우", "최서현", "정하윤", "강민서", "조지아", "윤수아", "임예은", "한다은"};
@@ -51,7 +53,7 @@ public class DataInitializer implements CommandLineRunner {
         LocalDateTime now = LocalDateTime.now();
 
         userRepository.save(User.builder()
-                .email("admin@match.com").password("admin1234").name("관리자")
+                .email("admin@match.com").password(passwordEncoder.encode("admin1234")).name("관리자")
                 .role(Role.ADMIN).status(UserStatus.ACTIVE).createdAt(now.minusDays(30))
                 .build());
 
@@ -118,7 +120,7 @@ public class DataInitializer implements CommandLineRunner {
         UserStatus status = index < 8 ? UserStatus.ACTIVE : (index == 8 ? UserStatus.PENDING : UserStatus.SUSPENDED);
         return User.builder()
                 .email(emailPrefix + "@match.com")
-                .password("pass1234")
+                .password(passwordEncoder.encode("pass1234"))
                 .name(name)
                 .age(24 + random.nextInt(12))
                 .gender(gender)

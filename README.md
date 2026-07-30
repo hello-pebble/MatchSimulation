@@ -20,8 +20,8 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | 프레임워크 | Spring Boot 4.1.0 (Spring Framework 7) |
 | 저장소 | H2 In-Memory DB + Spring Data JPA (기동 시 시드 데이터 자동 적재) |
 | 빌드 도구 | Gradle 9 (Wrapper) |
-| 주요 라이브러리 | spring-boot-starter-webmvc, restclient, validation, Lombok, JUnit 5 |
-| 인증 | In-Memory 더미 토큰 (`X-AUTH-TOKEN` 헤더) |
+| 주요 라이브러리 | spring-boot-starter-webmvc, restclient, validation, security, Lombok, JUnit 5 |
+| 인증 | Spring Security + **JWT**(HS256, 60분) + BCrypt — `X-AUTH-TOKEN` 헤더 |
 
 ## 3. 주요 기능
 
@@ -93,4 +93,4 @@ com.pebble.mvp
 | 단계 | 주요 작업 |
 | :--- | :--- |
 | Phase 3 | 외부 AI 매칭 서버 연동 (`external-ai` 엔진 활성화), LLM 기반 프로필 분석 |
-| Phase 4 | 외부 RDBMS 전환, JWT 인증, 실시간 채팅(WebSocket) |
+| Phase 4 | 외부 RDBMS 전환, 실시간 채팅(WebSocket), Flyway 마이그레이션 |

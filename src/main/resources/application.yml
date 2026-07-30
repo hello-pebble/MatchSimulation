@@ -26,3 +26,9 @@ matching:
 
 server:
   port: 8080
+
+# JWT 설정 — 운영 환경에서는 환경변수로 주입 (예: APP_JWT_SECRET)
+app:
+  jwt:
+    secret: local-dev-only-secret-key-change-me-32bytes-min!!
+    expiry-minutes: 60

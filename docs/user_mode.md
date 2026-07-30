@@ -13,10 +13,11 @@
 - 이메일 중복 시 400 에러, 나이는 19~100세 검증
 - 가입 직후 상태는 `PENDING` — **관리자 승인 후 매칭 이용 가능**
 
-### 1.2 로그인 (In-Memory 더미 인증)
-- 이메일 + 비밀번호 일치 시 UUID 토큰 발급
-- 이후 모든 인증 API는 `X-AUTH-TOKEN` 헤더로 호출
+### 1.2 로그인 (Spring Security + JWT)
+- 이메일 + 비밀번호(BCrypt 검증) 일치 시 **JWT**(HS256, 만료 60분) 발급
+- 이후 모든 인증 API는 `X-AUTH-TOKEN` 헤더에 JWT를 담아 호출
 - `SUSPENDED` 계정은 로그인 차단(403), 비밀번호 불일치 401
+- 정지되면 기존 토큰도 즉시 무효(401), 만료된 토큰은 재로그인 필요
 
 ### 1.3 매칭
 - **추천**: `ACTIVE` 상태의 이성 회원을 후보로 `MatchingEngine`이 점수화, 상위 5명 반환
@@ -35,8 +36,9 @@
 
 ## 2. API 명세
 
-Base URL: `http://localhost:8080` · 🔒 = `X-AUTH-TOKEN` 헤더 필요
-에러 응답(공통): `{"status": 400|401|403|404, "message": "..."}`
+Base URL: `http://localhost:8080` · 🔒 = `X-AUTH-TOKEN` 헤더(JWT) 필요
+에러 응답(공통): `{"status": 400|401|403|404|409, "message": "..."}`
+- 401: 토큰 없음/위조/만료/정지 계정 · 403: 권한 부족
 
 ### POST /api/auth/signup — 회원가입
 ```json
