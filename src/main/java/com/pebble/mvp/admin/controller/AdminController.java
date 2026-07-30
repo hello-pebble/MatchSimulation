@@ -9,7 +9,6 @@ import com.pebble.mvp.notification.dto.NotificationDtos.NotificationResponse;
 import com.pebble.mvp.qna.dto.QnaDtos.QnaAnswerRequest;
 import com.pebble.mvp.qna.dto.QnaDtos.QnaResponse;
 import com.pebble.mvp.admin.service.AdminStatsService;
-import com.pebble.mvp.user.service.AuthService;
 import com.pebble.mvp.notification.service.NotificationService;
 import com.pebble.mvp.qna.service.QnaService;
 import com.pebble.mvp.user.service.UserService;
@@ -25,14 +24,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 관리자 모드 API. 모든 엔드포인트는 X-AUTH-TOKEN의 Role=ADMIN 검사를 거친다.
+ * 관리자 모드 API.
+ * 인가는 SecurityConfig의 `/api/admin/** → hasRole('ADMIN')` 규칙이 담당한다.
  */
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 public class AdminController {
 
-    private final AuthService authService;
     private final UserService userService;
     private final QnaService qnaService;
     private final NotificationService notificationService;
@@ -41,37 +40,29 @@ public class AdminController {
     // ── 회원 관리 ──────────────────────────────────────────────
 
     @GetMapping("/users")
-    public PageResponse<UserResponse> users(@RequestHeader("X-AUTH-TOKEN") String token,
-                                            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC)
+    public PageResponse<UserResponse> users(@PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC)
                                             Pageable pageable) {
-        authService.requireAdmin(token);
         return userService.findAll(pageable);
     }
 
     @PatchMapping("/users/{userId}/status")
-    public UserResponse changeStatus(@RequestHeader("X-AUTH-TOKEN") String token,
-                                     @PathVariable Long userId,
+    public UserResponse changeStatus(@PathVariable Long userId,
                                      @Valid @RequestBody StatusChangeRequest request) {
-        authService.requireAdmin(token);
         return userService.changeStatus(userId, request.status());
     }
 
     // ── Q&A 관리 ──────────────────────────────────────────────
 
     @GetMapping("/qna")
-    public PageResponse<QnaResponse> qnaList(@RequestHeader("X-AUTH-TOKEN") String token,
-                                             @RequestParam(required = false) QnaStatus status,
+    public PageResponse<QnaResponse> qnaList(@RequestParam(required = false) QnaStatus status,
                                              @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC)
                                              Pageable pageable) {
-        authService.requireAdmin(token);
         return qnaService.findAll(status, pageable);
     }
 
     @PostMapping("/qna/{qnaId}/answer")
-    public QnaResponse answer(@RequestHeader("X-AUTH-TOKEN") String token,
-                              @PathVariable Long qnaId,
+    public QnaResponse answer(@PathVariable Long qnaId,
                               @Valid @RequestBody QnaAnswerRequest request) {
-        authService.requireAdmin(token);
         return qnaService.answer(qnaId, request.answer());
     }
 
@@ -79,23 +70,19 @@ public class AdminController {
 
     @PostMapping("/notifications")
     @ResponseStatus(HttpStatus.CREATED)
-    public NotificationResponse createNotification(@RequestHeader("X-AUTH-TOKEN") String token,
-                                                   @Valid @RequestBody NotificationCreateRequest request) {
-        authService.requireAdmin(token);
+    public NotificationResponse createNotification(@Valid @RequestBody NotificationCreateRequest request) {
         return notificationService.create(request);
     }
 
     @GetMapping("/notifications")
-    public List<NotificationResponse> notifications(@RequestHeader("X-AUTH-TOKEN") String token) {
-        authService.requireAdmin(token);
+    public List<NotificationResponse> notifications() {
         return notificationService.findAll();
     }
 
     // ── 매칭 현황 통계 ─────────────────────────────────────────
 
     @GetMapping("/stats/matches")
-    public MatchStatsResponse matchStats(@RequestHeader("X-AUTH-TOKEN") String token) {
-        authService.requireAdmin(token);
+    public MatchStatsResponse matchStats() {
         return adminStatsService.matchStats();
     }
 }

@@ -9,7 +9,9 @@ import com.pebble.mvp.user.dto.AuthDtos.LoginResponse;
 import com.pebble.mvp.user.dto.AuthDtos.SignupRequest;
 import com.pebble.mvp.user.dto.AuthDtos.UserResponse;
 import com.pebble.mvp.user.repository.UserRepository;
+import com.pebble.mvp.user.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,7 +21,8 @@ import java.time.LocalDateTime;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final TokenStore tokenStore;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
 
     public UserResponse signup(SignupRequest request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -27,7 +30,7 @@ public class AuthService {
         }
         User user = User.builder()
                 .email(request.email())
-                .password(request.password())
+                .password(passwordEncoder.encode(request.password()))
                 .name(request.name())
                 .age(request.age())
                 .gender(request.gender())
@@ -42,28 +45,12 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .filter(u -> u.getPassword().equals(request.password()))
+                .filter(u -> passwordEncoder.matches(request.password(), u.getPassword()))
                 .orElseThrow(() -> ApiException.unauthorized("이메일 또는 비밀번호가 일치하지 않습니다."));
         if (user.getStatus() == UserStatus.SUSPENDED) {
             throw ApiException.forbidden("정지된 계정입니다. 관리자에게 문의하세요.");
         }
-        String token = tokenStore.issue(user.getId());
+        String token = jwtProvider.issue(user.getId(), user.getRole().name());
         return new LoginResponse(token, UserResponse.from(user));
-    }
-
-    /** X-AUTH-TOKEN 헤더의 토큰으로 사용자 식별 */
-    public User authenticate(String token) {
-        Long userId = tokenStore.resolve(token)
-                .orElseThrow(() -> ApiException.unauthorized("유효하지 않은 토큰입니다. 로그인 후 이용하세요."));
-        return userRepository.findById(userId)
-                .orElseThrow(() -> ApiException.unauthorized("존재하지 않는 사용자입니다."));
-    }
-
-    public User requireAdmin(String token) {
-        User user = authenticate(token);
-        if (user.getRole() != Role.ADMIN) {
-            throw ApiException.forbidden("관리자 권한이 필요합니다.");
-        }
-        return user;
     }
 }

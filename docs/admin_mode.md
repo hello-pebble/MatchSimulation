@@ -5,7 +5,9 @@
 사용자 모드 문서: [user_mode.md](user_mode.md)
 
 기본 관리자 계정: `admin@match.com` / `admin1234`
-모든 관리자 API는 토큰의 Role이 `ADMIN`이 아니면 **403**.
+인증: 로그인으로 발급받은 **JWT**를 `X-AUTH-TOKEN` 헤더에 전달.
+모든 관리자 API는 Spring Security 규칙(`/api/admin/** → hasRole('ADMIN')`)으로
+보호되며, ADMIN이 아니면 **403** `{"status":403,"message":"관리자 권한이 필요합니다."}`.
 
 ---
 

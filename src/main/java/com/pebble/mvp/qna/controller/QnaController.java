@@ -2,11 +2,12 @@ package com.pebble.mvp.qna.controller;
 
 import com.pebble.mvp.qna.dto.QnaDtos.QnaCreateRequest;
 import com.pebble.mvp.qna.dto.QnaDtos.QnaResponse;
-import com.pebble.mvp.user.service.AuthService;
 import com.pebble.mvp.qna.service.QnaService;
+import com.pebble.mvp.user.domain.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,18 +17,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class QnaController {
 
-    private final AuthService authService;
     private final QnaService qnaService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public QnaResponse create(@RequestHeader("X-AUTH-TOKEN") String token,
+    public QnaResponse create(@AuthenticationPrincipal User me,
                               @Valid @RequestBody QnaCreateRequest request) {
-        return qnaService.create(authService.authenticate(token), request);
+        return qnaService.create(me, request);
     }
 
     @GetMapping("/my")
-    public List<QnaResponse> myQna(@RequestHeader("X-AUTH-TOKEN") String token) {
-        return qnaService.myQna(authService.authenticate(token));
+    public List<QnaResponse> myQna(@AuthenticationPrincipal User me) {
+        return qnaService.myQna(me);
     }
 }

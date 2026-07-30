@@ -1,18 +1,19 @@
 package com.pebble.mvp.matching.controller;
 
+import com.pebble.mvp.common.PageResponse;
 import com.pebble.mvp.matching.dto.MatchingDtos.MatchRequestDto;
 import com.pebble.mvp.matching.dto.MatchingDtos.MatchRespondDto;
 import com.pebble.mvp.matching.dto.MatchingDtos.MatchResponse;
-import com.pebble.mvp.user.service.AuthService;
 import com.pebble.mvp.matching.service.MatchingService;
 import com.pebble.mvp.matching.engine.ScoredCandidate;
-import com.pebble.mvp.common.PageResponse;
+import com.pebble.mvp.user.domain.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,32 +23,31 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MatchingController {
 
-    private final AuthService authService;
     private final MatchingService matchingService;
 
     @GetMapping("/recommendations")
-    public List<ScoredCandidate> recommendations(@RequestHeader("X-AUTH-TOKEN") String token) {
-        return matchingService.recommend(authService.authenticate(token));
+    public List<ScoredCandidate> recommendations(@AuthenticationPrincipal User me) {
+        return matchingService.recommend(me);
     }
 
     @PostMapping("/requests")
     @ResponseStatus(HttpStatus.CREATED)
-    public MatchResponse request(@RequestHeader("X-AUTH-TOKEN") String token,
+    public MatchResponse request(@AuthenticationPrincipal User me,
                                  @Valid @RequestBody MatchRequestDto request) {
-        return matchingService.request(authService.authenticate(token), request.partnerId());
+        return matchingService.request(me, request.partnerId());
     }
 
     @PostMapping("/requests/{matchId}/respond")
-    public MatchResponse respond(@RequestHeader("X-AUTH-TOKEN") String token,
+    public MatchResponse respond(@AuthenticationPrincipal User me,
                                  @PathVariable Long matchId,
                                  @Valid @RequestBody MatchRespondDto request) {
-        return matchingService.respond(authService.authenticate(token), matchId, request.accept());
+        return matchingService.respond(me, matchId, request.accept());
     }
 
     @GetMapping("/my")
-    public PageResponse<MatchResponse> myMatches(@RequestHeader("X-AUTH-TOKEN") String token,
+    public PageResponse<MatchResponse> myMatches(@AuthenticationPrincipal User me,
                                                  @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC)
                                                  Pageable pageable) {
-        return matchingService.myMatches(authService.authenticate(token), pageable);
+        return matchingService.myMatches(me, pageable);
     }
 }
