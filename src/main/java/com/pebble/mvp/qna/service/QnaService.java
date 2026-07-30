@@ -1,6 +1,10 @@
 package com.pebble.mvp.qna.service;
 
 import com.pebble.mvp.common.ApiException;
+import com.pebble.mvp.common.PageRequests;
+import com.pebble.mvp.common.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.pebble.mvp.qna.domain.Qna;
 import com.pebble.mvp.user.domain.User;
 import com.pebble.mvp.qna.domain.QnaStatus;
@@ -39,11 +43,12 @@ public class QnaService {
                 .toList();
     }
 
-    public List<QnaResponse> findAll(QnaStatus status) {
-        List<Qna> list = status == null
-                ? qnaRepository.findAllByOrderByCreatedAtDesc()
-                : qnaRepository.findByStatusOrderByCreatedAtDesc(status);
-        return list.stream().map(this::toResponse).toList();
+    public PageResponse<QnaResponse> findAll(QnaStatus status, Pageable pageable) {
+        Pageable clamped = PageRequests.clamp(pageable);
+        Page<Qna> page = status == null
+                ? qnaRepository.findAll(clamped)
+                : qnaRepository.findByStatus(status, clamped);
+        return PageResponse.of(page, this::toResponse);
     }
 
     @Transactional

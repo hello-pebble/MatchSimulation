@@ -13,8 +13,12 @@ import com.pebble.mvp.user.service.AuthService;
 import com.pebble.mvp.notification.service.NotificationService;
 import com.pebble.mvp.qna.service.QnaService;
 import com.pebble.mvp.user.service.UserService;
+import com.pebble.mvp.common.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,9 +41,11 @@ public class AdminController {
     // ── 회원 관리 ──────────────────────────────────────────────
 
     @GetMapping("/users")
-    public List<UserResponse> users(@RequestHeader("X-AUTH-TOKEN") String token) {
+    public PageResponse<UserResponse> users(@RequestHeader("X-AUTH-TOKEN") String token,
+                                            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC)
+                                            Pageable pageable) {
         authService.requireAdmin(token);
-        return userService.findAll();
+        return userService.findAll(pageable);
     }
 
     @PatchMapping("/users/{userId}/status")
@@ -53,10 +59,12 @@ public class AdminController {
     // ── Q&A 관리 ──────────────────────────────────────────────
 
     @GetMapping("/qna")
-    public List<QnaResponse> qnaList(@RequestHeader("X-AUTH-TOKEN") String token,
-                                     @RequestParam(required = false) QnaStatus status) {
+    public PageResponse<QnaResponse> qnaList(@RequestHeader("X-AUTH-TOKEN") String token,
+                                             @RequestParam(required = false) QnaStatus status,
+                                             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC)
+                                             Pageable pageable) {
         authService.requireAdmin(token);
-        return qnaService.findAll(status);
+        return qnaService.findAll(status, pageable);
     }
 
     @PostMapping("/qna/{qnaId}/answer")

@@ -23,8 +23,14 @@
 Base URL: `http://localhost:8080` · 모든 API는 관리자 토큰 `X-AUTH-TOKEN` 필요
 에러 응답(공통): `{"status": 400|401|403|404, "message": "..."}`
 
-### GET /api/admin/users — 전체 회원 목록
-Response 200: `UserResponse[]`
+### GET /api/admin/users — 전체 회원 목록 (페이징)
+- 파라미터: `?page=0&size=10&sort=createdAt,desc` (size 최대 100)
+```json
+// Response 200
+{"content":[{ ...UserResponse }],
+ "page":0,"size":10,"totalElements":21,"totalPages":3,"hasNext":true}
+```
+- 400: 존재하지 않는 sort 필드 (`{"status":400,"message":"정렬할 수 없는 필드입니다: ..."}`)
 
 ### PATCH /api/admin/users/{userId}/status — 회원 상태 변경 (승인/정지)
 ```json
@@ -33,8 +39,9 @@ Response 200: `UserResponse[]`
 // Response 200 — 변경된 UserResponse
 ```
 
-### GET /api/admin/qna?status=WAITING — 문의 목록
+### GET /api/admin/qna?status=WAITING — 문의 목록 (페이징)
 - `status` 생략 시 전체, `WAITING`/`ANSWERED` 필터 가능
+- 페이징 파라미터 동일 (`page`/`size`/`sort`), 응답은 `PageResponse<QnaResponse>` 포맷
 
 ### POST /api/admin/qna/{qnaId}/answer — 답변 작성
 ```json

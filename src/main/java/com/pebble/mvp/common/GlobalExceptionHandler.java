@@ -1,5 +1,6 @@
 package com.pebble.mvp.common;
 
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -31,5 +32,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
         return ResponseEntity.badRequest()
                 .body(Map.of("status", HttpStatus.BAD_REQUEST.value(), "message", e.getMessage()));
+    }
+
+    /** 허용되지 않은 sort 필드 등 잘못된 페이징 파라미터 */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidSort(PropertyReferenceException e) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("status", HttpStatus.BAD_REQUEST.value(),
+                        "message", "정렬할 수 없는 필드입니다: " + e.getPropertyName()));
     }
 }

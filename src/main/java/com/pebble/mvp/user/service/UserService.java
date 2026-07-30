@@ -5,11 +5,12 @@ import com.pebble.mvp.user.domain.User;
 import com.pebble.mvp.user.domain.UserStatus;
 import com.pebble.mvp.user.dto.AuthDtos.UserResponse;
 import com.pebble.mvp.user.repository.UserRepository;
+import com.pebble.mvp.common.PageRequests;
+import com.pebble.mvp.common.PageResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -17,8 +18,8 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public List<UserResponse> findAll() {
-        return userRepository.findAll().stream().map(UserResponse::from).toList();
+    public PageResponse<UserResponse> findAll(Pageable pageable) {
+        return PageResponse.of(userRepository.findAll(PageRequests.clamp(pageable)), UserResponse::from);
     }
 
     @Transactional

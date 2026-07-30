@@ -85,8 +85,14 @@ Response 200: `UserResponse`
 ```
 - 403: 요청 받은 본인이 아님 · 400: 이미 처리됨
 
-### GET /api/matching/my — 내 매칭 목록 🔒
-Response 200: `MatchResponse[]`
+### GET /api/matching/my — 내 매칭 목록 🔒 (페이징)
+- 파라미터: `?page=0&size=10&sort=createdAt,desc` (size 최대 100, 기본 최신순)
+```json
+// Response 200
+{"content":[{ ...MatchResponse }],
+ "page":0,"size":10,"totalElements":3,"totalPages":1,"hasNext":false}
+```
+- 400: 존재하지 않는 sort 필드
 
 ### POST /api/qna — 문의 등록 🔒
 ```json

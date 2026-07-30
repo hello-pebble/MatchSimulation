@@ -1,6 +1,9 @@
 package com.pebble.mvp.matching.service;
 
 import com.pebble.mvp.common.ApiException;
+import com.pebble.mvp.common.PageRequests;
+import com.pebble.mvp.common.PageResponse;
+import org.springframework.data.domain.Pageable;
 import com.pebble.mvp.matching.domain.MatchRecord;
 import com.pebble.mvp.user.domain.User;
 import com.pebble.mvp.matching.domain.MatchStatus;
@@ -85,10 +88,10 @@ public class MatchingService {
         return toResponse(record);
     }
 
-    public List<MatchResponse> myMatches(User me) {
-        return matchRecordRepository.findByRequesterIdOrPartnerId(me.getId(), me.getId()).stream()
-                .map(this::toResponse)
-                .toList();
+    public PageResponse<MatchResponse> myMatches(User me, Pageable pageable) {
+        return PageResponse.of(
+                matchRecordRepository.findByRequesterIdOrPartnerId(me.getId(), me.getId(), PageRequests.clamp(pageable)),
+                this::toResponse);
     }
 
     private MatchResponse toResponse(MatchRecord record) {

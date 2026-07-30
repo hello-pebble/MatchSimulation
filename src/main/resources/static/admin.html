@@ -42,7 +42,13 @@
 
   <section>
     <h2>회원 관리</h2>
-    <button onclick="call('GET','/api/admin/users')">전체 회원 조회</button>
+    <div class="row">
+      <input id="u-page" type="number" value="0" min="0" title="page">
+      <input id="u-size" type="number" value="10" min="1" title="size">
+      <button onclick="loadUsers(0)">회원 조회</button>
+      <button onclick="loadUsers(-1)">◀ 이전</button>
+      <button onclick="loadUsers(1)">다음 ▶</button>
+    </div>
     <div class="row">
       <input id="u-id" type="number" placeholder="userId">
       <select id="u-status">
@@ -56,8 +62,13 @@
 
   <section>
     <h2>Q&A 관리</h2>
-    <button onclick="call('GET','/api/admin/qna')">전체 문의</button>
-    <button onclick="call('GET','/api/admin/qna?status=WAITING')">답변 대기</button>
+    <div class="row">
+      <input id="q-page" type="number" value="0" min="0" title="page">
+      <button onclick="loadQna(0,'')">전체 문의</button>
+      <button onclick="loadQna(0,'WAITING')">답변 대기</button>
+      <button onclick="loadQna(-1)">◀ 이전</button>
+      <button onclick="loadQna(1)">다음 ▶</button>
+    </div>
     <div class="row"><input id="q-id" type="number" placeholder="qnaId"></div>
     <textarea id="q-answer" rows="2" placeholder="답변 내용">확인 후 안내드리겠습니다.</textarea>
     <button onclick="call('POST','/api/admin/qna/'+v('q-id')+'/answer',{answer:v('q-answer')})">답변 등록</button>
@@ -114,6 +125,22 @@ async function login() {
     sessionStorage.setItem('adminWho', data.user.name);
     updateWho(data.user.name);
   }
+}
+function step(id, delta) {
+  const el = document.getElementById(id);
+  el.value = Math.max(0, (+el.value || 0) + delta);
+  return el.value;
+}
+function loadUsers(delta) {
+  const page = delta === 0 ? v('u-page') : step('u-page', delta);
+  call('GET', `/api/admin/users?page=${page}&size=${v('u-size') || 10}&sort=createdAt,desc`);
+}
+let qnaStatus = '';
+function loadQna(delta, status) {
+  if (status !== undefined) { qnaStatus = status; document.getElementById('q-page').value = 0; }
+  const page = delta === 0 ? v('q-page') : step('q-page', delta);
+  const filter = qnaStatus ? `&status=${qnaStatus}` : '';
+  call('GET', `/api/admin/qna?page=${page}&size=10&sort=createdAt,desc${filter}`);
 }
 function createNotification() {
   const target = v('n-target');
