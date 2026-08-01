@@ -96,6 +96,8 @@ class SecurityIntegrationTest {
 
         mockMvc.perform(get("/api/auth/me").header("X-AUTH-TOKEN", token))
                 .andExpect(status().isUnauthorized());
+
+        userRepository.deleteById(id); // 공유 컨텍스트의 회원 수 검증 테스트 보호
     }
 
     @Test
