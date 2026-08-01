@@ -9,7 +9,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | 항목 | 내용 |
 | :--- | :--- |
 | 프로젝트명 | MatchSimulation |
-| 개발 단계 | Phase 2 (기술스택 업그레이드 + 관리자 모드 구현 완료) |
+| 개발 단계 | Phase 5-1 (1:1 채팅 MVP — 새로고침 + afterId 증분 조회 완료) |
 | 아키텍처 | 기능별 모듈(package-by-feature) 구조 + 매칭 엔진 Interface/Adapter 확장 구조 |
 
 ## 2. 기술 스택
@@ -29,6 +29,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | :--- | :--- |
 | 회원 | 회원가입(PENDING) / 로그인(더미 토큰) / 내 정보 |
 | 매칭 | 규칙 기반 추천(지역·나이·직군 점수), 매칭 요청/수락/거절, 내 매칭 이력, 7일 무응답 자동 만료 배치 |
+| 채팅 | 매칭 성사(ACCEPTED) 상대와 1:1 대화 — afterId 증분 조회 (새로고침 기반 1단계) |
 | Q&A | 문의 등록, 내 문의 조회 |
 | 알림 | 전체 공지 + 개별 알림 조회 |
 | **관리자** | 회원 목록/상태 변경(승인·정지), Q&A 답변, 알림 등록(전체/개별), 일별·성별·상태별 매칭 통계 |
@@ -44,6 +45,7 @@ com.pebble.mvp
 ├── config        # H2 시드 데이터 초기화
 ├── user          # 회원가입 / 로그인(더미 토큰) / 계정
 ├── matching      # 추천, 매칭 요청/응답, 매칭 엔진(AI 연동 접점: matching.engine)
+├── chat          # 매칭 성사 상대와 1:1 채팅 (afterId 증분 조회)
 ├── qna           # 1:1 문의 (유저 등록, 관리자 답변)
 ├── notification  # 공지/알림
 └── admin         # 관리자 회원관리 / QnA / 알림등록 / 매칭 통계
@@ -55,6 +57,7 @@ com.pebble.mvp
 | :--- | :--- | :--- |
 | 인증 | POST /api/auth/signup, /login · GET /api/auth/me | 가입(PENDING) / 로그인(토큰) / 내 정보 |
 | 매칭 | GET /api/matching/recommendations · POST /api/matching/requests, /requests/{id}/respond · GET /api/matching/my | 추천 / 요청 / 수락·거절 / 내 매칭 |
+| 채팅 | GET /api/chat/rooms · POST·GET /api/chat/{matchId}/messages(?afterId=N) | 대화방 목록 / 전송 / 증분 조회 |
 | QnA | POST /api/qna · GET /api/qna/my | 문의 등록 / 내 문의 |
 | 알림 | GET /api/notifications/my | 내 알림(전체 공지 + 개별) |
 | 관리자 | GET·PATCH /api/admin/users(/{id}/status) · GET·POST /api/admin/qna(/{id}/answer) · GET·POST /api/admin/notifications · GET /api/admin/stats/matches | 회원관리 / QnA 답변 / 알림 등록 / 매칭 통계 |
@@ -93,5 +96,5 @@ com.pebble.mvp
 
 | 단계 | 주요 작업 |
 | :--- | :--- |
-| Phase 3 | 외부 AI 매칭 서버 연동 (`external-ai` 엔진 활성화), LLM 기반 프로필 분석 |
-| Phase 5 | 외부 RDBMS 전환, 실시간 채팅(WebSocket), 외부 AI 매칭 서버 실연동 |
+| Phase 5-2/5-3 | 채팅 조회 방식 진화 — Short Polling(3초 주기) → Long Polling(서버 대기) |
+| 이후 | 실시간 채팅(WebSocket), 외부 RDBMS 전환, 외부 AI 매칭 서버 실연동 |

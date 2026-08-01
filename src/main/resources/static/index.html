@@ -80,6 +80,24 @@
   </section>
 
   <section class="wide">
+    <h2>5. 채팅 (매칭 성사 상대와 1:1 대화)</h2>
+    <div class="row">
+      <button onclick="loadRooms()">대화방 목록</button>
+      <input id="c-match" type="number" placeholder="matchId (대화방)">
+      <button onclick="openChat()">대화방 열기</button>
+      <button onclick="refreshChat()">새로고침</button>
+    </div>
+    <div id="chat-box" style="background:#f8f9ff;border:1px solid #dde;border-radius:8px;min-height:80px;max-height:220px;overflow:auto;padding:10px;font-size:13px;margin:6px 0">
+      대화방을 열면 메시지가 표시됩니다.
+    </div>
+    <div class="row">
+      <input id="c-input" placeholder="메시지 입력 (최대 500자)">
+      <button onclick="sendChat()" style="flex:0 0 auto">전송</button>
+    </div>
+    <p id="chat-status" style="font-size:12px;color:#777">새로고침은 마지막 수신 메시지 이후(afterId)만 증분 조회합니다.</p>
+  </section>
+
+  <section class="wide">
     <h2>API 응답</h2>
     <pre id="out">여기에 결과가 표시됩니다.</pre>
   </section>
@@ -117,6 +135,48 @@ async function signup() {
     email: v('su-email'), password: v('su-pass'), name: v('su-name'),
     age: +v('su-age'), gender: v('su-gender'), job: v('su-job'), location: v('su-loc')
   });
+}
+// --- 채팅 (1단계: 새로고침 기반 + afterId 증분 조회) ---
+let chatLastId = 0;
+
+function chatStatus(msg) { document.getElementById('chat-status').textContent = msg; }
+function appendMessages(list, reset) {
+  const box = document.getElementById('chat-box');
+  if (reset) box.innerHTML = '';
+  for (const m of list) {
+    const div = document.createElement('div');
+    div.style.cssText = 'margin:4px 0;text-align:' + (m.mine ? 'right' : 'left');
+    div.innerHTML = '<span style="background:' + (m.mine ? '#4a5bd4;color:#fff' : '#e8ecff;color:#222')
+      + ';border-radius:12px;padding:4px 10px;display:inline-block;max-width:70%">'
+      + '<b style="font-size:11px">' + m.senderName + '</b> ' + m.content + '</span>';
+    box.appendChild(div);
+    chatLastId = Math.max(chatLastId, m.id);
+  }
+  box.scrollTop = box.scrollHeight;
+}
+async function loadRooms() { await call('GET', '/api/chat/rooms'); }
+async function openChat() {
+  chatLastId = 0;
+  const list = await call('GET', '/api/chat/' + v('c-match') + '/messages');
+  if (Array.isArray(list)) {
+    appendMessages(list, true);
+    chatStatus('대화방 ' + v('c-match') + ' — 전체 ' + list.length + '건 로드 (마지막 id=' + chatLastId + ')');
+  }
+}
+async function refreshChat() {
+  const afterId = chatLastId;
+  const list = await call('GET', '/api/chat/' + v('c-match') + '/messages?afterId=' + afterId);
+  if (Array.isArray(list)) {
+    appendMessages(list, false);
+    chatStatus('새로고침(afterId=' + afterId + ') — 새 메시지 ' + list.length + '건');
+  }
+}
+async function sendChat() {
+  const sent = await call('POST', '/api/chat/' + v('c-match') + '/messages', { content: v('c-input') });
+  if (sent && sent.id) {
+    document.getElementById('c-input').value = '';
+    await refreshChat();
+  }
 }
 async function login() {
   const data = await call('POST', '/api/auth/login', { email: v('li-email'), password: v('li-pass') });
