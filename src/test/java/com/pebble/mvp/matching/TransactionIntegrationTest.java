@@ -112,9 +112,11 @@ class TransactionIntegrationTest {
 
     @Test
     void 관리자_정지_시_대상_회원_알림이_함께_생성된다() {
-        User target = userRepository.findAll().stream()
+        // 다른 테스트가 로그인에 사용하는 계정(male1, admin)을 피해 마지막 ACTIVE 회원을 대상으로 한다
+        List<User> actives = userRepository.findAll().stream()
                 .filter(u -> u.getStatus() == UserStatus.ACTIVE && u.getRole().name().equals("USER"))
-                .findFirst().orElseThrow();
+                .toList();
+        User target = actives.get(actives.size() - 1);
         long before = notificationRepository
                 .findByTargetUserIdIsNullOrTargetUserIdOrderByCreatedAtDesc(target.getId()).size();
 
@@ -124,5 +126,7 @@ class TransactionIntegrationTest {
                 .findByTargetUserIdIsNullOrTargetUserIdOrderByCreatedAtDesc(target.getId());
         assertThat(after.size()).isEqualTo(before + 1);
         assertThat(after.get(0).getTitle()).contains("정지");
+
+        userService.changeStatus(target.getId(), UserStatus.ACTIVE); // 공유 컨텍스트 상태 원복
     }
 }

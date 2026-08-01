@@ -18,7 +18,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | :--- | :--- |
 | 언어 | Java 21 (Record DTO, Virtual Threads 활성화) |
 | 프레임워크 | Spring Boot 4.1.0 (Spring Framework 7) |
-| 저장소 | H2 In-Memory DB + Spring Data JPA (기동 시 시드 데이터 자동 적재) |
+| 저장소 | H2 In-Memory DB + Spring Data JPA + **Flyway 마이그레이션**(`db/migration`, ddl-auto=validate) |
 | 빌드 도구 | Gradle 9 (Wrapper) |
 | 주요 라이브러리 | spring-boot-starter-webmvc, restclient, validation, security, Lombok, JUnit 5 |
 | 인증 | Spring Security + **JWT**(HS256, 60분) + BCrypt — `X-AUTH-TOKEN` 헤더 |
