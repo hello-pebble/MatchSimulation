@@ -9,7 +9,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | 항목 | 내용 |
 | :--- | :--- |
 | 프로젝트명 | MatchSimulation |
-| 개발 단계 | Phase 5-2 (1:1 채팅 — afterId 증분 조회 + Short Polling 완료) |
+| 개발 단계 | Phase 5-3 (1:1 채팅 — 새로고침 → Short Polling → Long Polling 완료) |
 | 아키텍처 | 기능별 모듈(package-by-feature) 구조 + 매칭 엔진 Interface/Adapter 확장 구조 |
 
 ## 2. 기술 스택
@@ -29,7 +29,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | :--- | :--- |
 | 회원 | 회원가입(PENDING) / 로그인(더미 토큰) / 내 정보 |
 | 매칭 | 규칙 기반 추천(지역·나이·직군 점수), 매칭 요청/수락/거절, 내 매칭 이력, 7일 무응답 자동 만료 배치 |
-| 채팅 | 매칭 성사(ACCEPTED) 상대와 1:1 대화 — afterId 증분 조회, 수동/자동(3초 Short Polling) 새로고침 |
+| 채팅 | 매칭 성사(ACCEPTED) 상대와 1:1 대화 — afterId 증분 조회, 새로고침/Short Polling/**Long Polling** 3단계 수신 |
 | Q&A | 문의 등록, 내 문의 조회 |
 | 알림 | 전체 공지 + 개별 알림 조회 |
 | **관리자** | 회원 목록/상태 변경(승인·정지), Q&A 답변, 알림 등록(전체/개별), 일별·성별·상태별 매칭 통계 |
@@ -57,7 +57,7 @@ com.pebble.mvp
 | :--- | :--- | :--- |
 | 인증 | POST /api/auth/signup, /login · GET /api/auth/me | 가입(PENDING) / 로그인(토큰) / 내 정보 |
 | 매칭 | GET /api/matching/recommendations · POST /api/matching/requests, /requests/{id}/respond · GET /api/matching/my | 추천 / 요청 / 수락·거절 / 내 매칭 |
-| 채팅 | GET /api/chat/rooms · POST·GET /api/chat/{matchId}/messages(?afterId=N) | 대화방 목록 / 전송 / 증분 조회 |
+| 채팅 | GET /api/chat/rooms · POST·GET /api/chat/{matchId}/messages(?afterId=N) · GET .../messages/poll | 대화방 목록 / 전송 / 증분 조회 / Long Polling |
 | QnA | POST /api/qna · GET /api/qna/my | 문의 등록 / 내 문의 |
 | 알림 | GET /api/notifications/my | 내 알림(전체 공지 + 개별) |
 | 관리자 | GET·PATCH /api/admin/users(/{id}/status) · GET·POST /api/admin/qna(/{id}/answer) · GET·POST /api/admin/notifications · GET /api/admin/stats/matches | 회원관리 / QnA 답변 / 알림 등록 / 매칭 통계 |
@@ -96,5 +96,4 @@ com.pebble.mvp
 
 | 단계 | 주요 작업 |
 | :--- | :--- |
-| Phase 5-3 | 채팅 Long Polling(서버 대기) — Short Polling의 빈 요청(실측 90%) 절감 |
 | 이후 | 실시간 채팅(WebSocket), 외부 RDBMS 전환, 외부 AI 매칭 서버 실연동 |

@@ -30,6 +30,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
 
+    /**
+     * Long Polling(DeferredResult)의 ASYNC 디스패치에서도 재인증한다 —
+     * 기본값(true)이면 비동기 응답 재개 시 SecurityContext가 비어 401이 된다.
+     */
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
