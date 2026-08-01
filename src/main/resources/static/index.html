@@ -86,6 +86,7 @@
       <input id="c-match" type="number" placeholder="matchId (대화방)">
       <button onclick="openChat()">대화방 열기</button>
       <button onclick="refreshChat()">새로고침</button>
+      <button id="c-poll" onclick="togglePolling()" style="background:#2e9e5b">자동 새로고침 시작</button>
     </div>
     <div id="chat-box" style="background:#f8f9ff;border:1px solid #dde;border-radius:8px;min-height:80px;max-height:220px;overflow:auto;padding:10px;font-size:13px;margin:6px 0">
       대화방을 열면 메시지가 표시됩니다.
@@ -155,7 +156,40 @@ function appendMessages(list, reset) {
   box.scrollTop = box.scrollHeight;
 }
 async function loadRooms() { await call('GET', '/api/chat/rooms'); }
+// --- Short Polling (2단계): 3초 주기 자동 새로고침 — 서버 API는 1단계 그대로 ---
+let pollTimer = null, pollCount = 0, pollEmpty = 0, pollReceived = 0;
+
+function togglePolling() {
+  const btn = document.getElementById('c-poll');
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+    btn.textContent = '자동 새로고침 시작';
+    btn.style.background = '#2e9e5b';
+    chatStatus('자동 새로고침 중지 — 폴링 ' + pollCount + '회 · 새 메시지 ' + pollReceived + '건 · 빈 응답 ' + pollEmpty + '회');
+    return;
+  }
+  pollCount = pollEmpty = pollReceived = 0;
+  pollTimer = setInterval(pollOnce, 3000);
+  btn.textContent = '자동 새로고침 중지';
+  btn.style.background = '#c0392b';
+  chatStatus('자동 새로고침 시작 (3초 주기, afterId 증분 조회)');
+}
+async function pollOnce() {
+  pollCount++;
+  const afterId = chatLastId;
+  const list = await call('GET', '/api/chat/' + v('c-match') + '/messages?afterId=' + afterId);
+  if (!Array.isArray(list)) { // 401/403/404 등 — 폴링 자동 중지
+    togglePolling();
+    chatStatus('오류 응답으로 자동 새로고침을 중지했습니다.');
+    return;
+  }
+  if (list.length === 0) pollEmpty++;
+  else { pollReceived += list.length; appendMessages(list, false); }
+  chatStatus('자동 새로고침 중(3초) — 폴링 ' + pollCount + '회 · 새 메시지 ' + pollReceived + '건 · 빈 응답 ' + pollEmpty + '회');
+}
 async function openChat() {
+  if (pollTimer) togglePolling(); // 대화방 변경 시 기존 폴링 중지
   chatLastId = 0;
   const list = await call('GET', '/api/chat/' + v('c-match') + '/messages');
   if (Array.isArray(list)) {
