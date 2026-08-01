@@ -35,6 +35,12 @@
 ### 1.5 알림
 - 전체 공지(targetUserId=null) + 본인 대상 알림을 합쳐 최신순 조회
 
+### 1.6 채팅 (1:1 대화)
+- **매칭이 성사(ACCEPTED)된 상대와만** 대화 가능 — 대화방 ID는 matchId를 그대로 사용
+- 메시지는 텍스트 1~500자, 조회는 **afterId 증분 방식**: 마지막으로 받은 메시지 id
+  이후만 요청해 전체 재조회를 피한다 (1단계: 새로고침 버튼 기반)
+- 참여자가 아니면 403, 성사 전(REQUESTED)/거절(REJECTED)/만료(EXPIRED) 매칭은 400
+
 ## 2. API 명세
 
 Base URL: `http://localhost:8080` · 🔒 = `X-AUTH-TOKEN` 헤더(JWT) 필요
@@ -116,6 +122,33 @@ Response 200: 전체 공지 + 본인 대상 알림 (최신순)
 [{"id":3,"targetUserId":null,"target":"ALL","title":"공지","message":"...","createdAt":"..."}]
 ```
 
+### GET /api/chat/rooms — 내 대화방 목록 🔒
+```json
+// Response 200 — 내 ACCEPTED 매칭 (최근 순, 마지막 메시지 포함)
+[{"matchId":5,"partnerId":11,"partnerName":"정하윤",
+  "lastMessage":"이번 주말에 시간 괜찮으세요?","lastMessageAt":"2026-08-01T13:23:13"}]
+```
+
+### POST /api/chat/{matchId}/messages — 메시지 전송 🔒
+```json
+// Request
+{"content":"토요일 오후 좋아요!"}
+// Response 201
+{"id":4,"matchId":5,"senderId":11,"senderName":"정하윤","mine":true,
+ "content":"토요일 오후 좋아요!","createdAt":"..."}
+```
+- 400: 빈 내용/500자 초과/미성사 매칭 · 403: 비참여자 · 404: 매칭 없음
+
+### GET /api/chat/{matchId}/messages?afterId=N — 메시지 조회 (증분) 🔒
+- `afterId` 생략 시 전체 대화(최초 입장), 지정 시 **해당 id 이후 메시지만** 오름차순 반환
+- 응답의 `mine`으로 내 메시지/상대 메시지를 구분
+```json
+// GET /api/chat/5/messages?afterId=3 → id>3 만
+[{"id":4,"matchId":5,"senderId":11,"senderName":"정하윤","mine":false,
+  "content":"토요일 오후 좋아요!","createdAt":"..."}]
+// 새 메시지가 없으면 []
+```
+
 ## 3. 콘솔 사용 시나리오 (`/index.html`)
 
 1. `male1@match.com` / `pass1234`로 **로그인** (상단 배지에 이름 표시)
@@ -123,6 +156,8 @@ Response 200: 전체 공지 + 본인 대상 알림 (최신순)
 3. userId 입력 후 **매칭 요청**
 4. 상대 계정(예: `female1@match.com`)으로 로그인 → **내 매칭 목록**에서 matchId 확인 → **수락/거절**
 5. **문의 등록** 후 **내 문의**로 답변 확인, **내 알림**으로 공지 확인
+6. **대화방 목록**으로 성사된 매칭의 matchId 확인 → **대화방 열기** → 메시지 입력
+   후 **전송**, 상대 메시지는 **새로고침**(afterId 증분)으로 수신
 
 ## 4. 샘플 계정
 

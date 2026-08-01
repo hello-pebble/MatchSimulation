@@ -1,5 +1,7 @@
 package com.pebble.mvp.config;
 
+import com.pebble.mvp.chat.domain.ChatMessage;
+import com.pebble.mvp.chat.repository.ChatMessageRepository;
 import com.pebble.mvp.matching.domain.MatchRecord;
 import com.pebble.mvp.notification.domain.Notification;
 import com.pebble.mvp.qna.domain.Qna;
@@ -37,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
     private final MatchRecordRepository matchRecordRepository;
     private final QnaRepository qnaRepository;
     private final NotificationRepository notificationRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final PasswordEncoder passwordEncoder;
 
     private static final String[] MALE_NAMES = {"김민준", "이서준", "박도윤", "최시우", "정하준", "강지호", "조은우", "윤선우", "임유준", "한준서"};
@@ -84,6 +87,21 @@ public class DataInitializer implements CommandLineRunner {
         }
         matchRecordRepository.saveAll(matches);
 
+        // 첫 ACCEPTED 매칭에 샘플 대화 적재 — 콘솔에서 채팅을 즉시 확인할 수 있게
+        matches.stream()
+                .filter(m -> m.getStatus() == MatchStatus.ACCEPTED)
+                .findFirst()
+                .ifPresent(m -> chatMessageRepository.saveAll(List.of(
+                        ChatMessage.builder().matchId(m.getId()).senderId(m.getRequesterId())
+                                .content("안녕하세요! 매칭 수락해 주셔서 감사해요 :)")
+                                .createdAt(now.minusHours(3)).build(),
+                        ChatMessage.builder().matchId(m.getId()).senderId(m.getPartnerId())
+                                .content("안녕하세요~ 프로필 보고 반가웠어요.")
+                                .createdAt(now.minusHours(2)).build(),
+                        ChatMessage.builder().matchId(m.getId()).senderId(m.getRequesterId())
+                                .content("이번 주말에 시간 괜찮으세요?")
+                                .createdAt(now.minusHours(1)).build())));
+
         User asker1 = users.get(0);
         User asker2 = users.get(1);
         qnaRepository.save(Qna.builder()
@@ -111,9 +129,9 @@ public class DataInitializer implements CommandLineRunner {
                 .message("회원님의 프로필 심사가 진행 중입니다.")
                 .createdAt(now.minusDays(1)).build());
 
-        log.info("시드 데이터 적재 완료: users={}, matches={}, qna={}, notifications={}",
+        log.info("시드 데이터 적재 완료: users={}, matches={}, qna={}, notifications={}, chatMessages={}",
                 userRepository.count(), matchRecordRepository.count(),
-                qnaRepository.count(), notificationRepository.count());
+                qnaRepository.count(), notificationRepository.count(), chatMessageRepository.count());
     }
 
     private User seedUser(Random random, LocalDateTime now, int index, Gender gender, String name, String emailPrefix) {
