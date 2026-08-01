@@ -13,6 +13,10 @@ spring:
     hibernate:
       ddl-auto: validate   # 스키마는 Flyway(db/migration)가 소유, Hibernate는 검증만
     open-in-view: false
+  cache:
+    cache-names: matchStats
+    caffeine:
+      spec: expireAfterWrite=60s
   h2:
     console:
       enabled: true

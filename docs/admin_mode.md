@@ -64,6 +64,8 @@ Base URL: `http://localhost:8080` · 모든 API는 관리자 토큰 `X-AUTH-TOKE
 ### GET /api/admin/notifications — 등록된 알림 목록
 
 ### GET /api/admin/stats/matches — 매칭 현황 통계
+- 60초 TTL 캐시 적용 (매칭 요청/응답/만료 발생 시 즉시 무효화되어 최신 반영)
+- byStatus에 `EXPIRED`(7일 무응답 자동 만료) 포함
 ```json
 // Response 200
 {"totalMatches":31,"acceptedMatches":11,"acceptanceRate":35.5,
