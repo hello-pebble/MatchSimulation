@@ -37,3 +37,7 @@
 ## 5. 남은 사항
 
 - 없음. 다음 단계: Phase 4-3 캐싱 + 만료 스케줄러
+
+## 6. 동작 화면
+
+![Swagger UI](images/8_swagger_ui.png)
