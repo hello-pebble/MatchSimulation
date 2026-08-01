@@ -7,6 +7,7 @@ import com.pebble.mvp.admin.dto.AdminDtos.MatchStatsResponse;
 import com.pebble.mvp.matching.repository.MatchRecordRepository;
 import com.pebble.mvp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
@@ -24,7 +25,12 @@ public class AdminStatsService {
     private final MatchRecordRepository matchRecordRepository;
     private final UserRepository userRepository;
 
-    /** 일별/성별(요청자 기준)/상태별 매칭 현황 요약 */
+    /**
+     * 일별/성별(요청자 기준)/상태별 매칭 현황 요약.
+     * 전체 매칭·회원을 훑는 집계라 60초 TTL 캐시를 적용하고,
+     * 매칭 변경(요청/응답/만료) 시점에 즉시 무효화된다.
+     */
+    @Cacheable("matchStats")
     public MatchStatsResponse matchStats() {
         var matches = matchRecordRepository.findAll();
         Map<Long, String> genderByUserId = userRepository.findAll().stream()

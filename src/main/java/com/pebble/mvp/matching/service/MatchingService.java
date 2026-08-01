@@ -15,6 +15,7 @@ import com.pebble.mvp.user.repository.UserRepository;
 import com.pebble.mvp.matching.engine.MatchingEngine;
 import com.pebble.mvp.matching.engine.ScoredCandidate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +50,7 @@ public class MatchingService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "matchStats", allEntries = true)
     public MatchResponse request(User me, Long partnerId) {
         if (Objects.equals(me.getId(), partnerId)) {
             throw ApiException.badRequest("자기 자신에게는 매칭을 요청할 수 없습니다.");
@@ -82,6 +84,7 @@ public class MatchingService {
      * 동시 응답 경쟁은 MatchRecord의 @Version 낙관적 락으로 차단된다(409).
      */
     @Transactional
+    @CacheEvict(cacheNames = "matchStats", allEntries = true)
     public MatchResponse respond(User me, Long matchId, boolean accept) {
         MatchRecord record = matchRecordRepository.findById(matchId)
                 .orElseThrow(() -> ApiException.notFound("매칭 요청을 찾을 수 없습니다: " + matchId));
