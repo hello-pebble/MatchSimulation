@@ -1,5 +1,6 @@
 package com.pebble.mvp.matching.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.pebble.mvp.common.PageResponse;
 import com.pebble.mvp.matching.dto.MatchingDtos.MatchRequestDto;
 import com.pebble.mvp.matching.dto.MatchingDtos.MatchRespondDto;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "매칭", description = "추천, 매칭 요청/응답, 내 매칭 이력")
 @RestController
 @RequestMapping("/api/matching")
 @RequiredArgsConstructor

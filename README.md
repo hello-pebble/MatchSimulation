@@ -73,6 +73,7 @@ com.pebble.mvp
 | /index.html | 회원 테스트 콘솔 |
 | /admin.html | 관리자 콘솔 (통계 뷰어 포함) |
 | /h2-console | H2 DB 콘솔 (`jdbc:h2:mem:matchdb`, user `sa`) |
+| /swagger-ui.html | Swagger API 문서 (Authorize에 JWT 입력 후 실호출 가능) |
 
 샘플 계정: 관리자 `admin@match.com` / `admin1234`, 회원 `male1~10`·`female1~10@match.com` / `pass1234`
 

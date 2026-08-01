@@ -1,5 +1,6 @@
 package com.pebble.mvp.qna.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.pebble.mvp.qna.dto.QnaDtos.QnaCreateRequest;
 import com.pebble.mvp.qna.dto.QnaDtos.QnaResponse;
 import com.pebble.mvp.qna.service.QnaService;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "QnA", description = "1:1 문의 등록 및 조회")
 @RestController
 @RequestMapping("/api/qna")
 @RequiredArgsConstructor
