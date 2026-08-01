@@ -185,3 +185,4 @@ Response 200: 전체 공지 + 본인 대상 알림 (최신순)
 | ![추천](images/2_user_recommendations.png) | 추천 받기 — 점수·추천 사유 포함 응답 |
 | ![매칭 요청](images/3_user_match_request.png) | 매칭 요청 — REQUESTED 생성 |
 | ![문의 등록](images/4_user_qna.png) | 문의 등록 — WAITING 상태 |
+| ![채팅](images/9_user_chat.png) | 1:1 채팅 — 말풍선 대화 + 수신 모드(Long Polling) 자동 수신 중 |

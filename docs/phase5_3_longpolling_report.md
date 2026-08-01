@@ -54,3 +54,7 @@
 | 5-2 | Short Polling (3초) | 자동화, 빈 응답 90% 실측 | #13 |
 | 5-3 | Long Polling (서버 대기) | 요청 수 1/5, 지연 ≈ 0 | 본 단계 |
 | 다음 | WebSocket | 양방향 실시간 (향후 과제) | - |
+
+## 6. 동작 화면
+
+![채팅 콘솔 — Long Polling 자동 수신](images/9_user_chat.png)
