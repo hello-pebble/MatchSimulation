@@ -1,5 +1,6 @@
 package com.pebble.mvp.admin.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.pebble.mvp.qna.domain.QnaStatus;
 import com.pebble.mvp.admin.dto.AdminDtos.MatchStatsResponse;
 import com.pebble.mvp.admin.dto.AdminDtos.StatusChangeRequest;
@@ -27,6 +28,7 @@ import java.util.List;
  * 관리자 모드 API.
  * 인가는 SecurityConfig의 `/api/admin/** → hasRole('ADMIN')` 규칙이 담당한다.
  */
+@Tag(name = "관리자", description = "회원관리, QnA 답변, 알림 등록, 매칭 통계 (ADMIN 전용)")
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor

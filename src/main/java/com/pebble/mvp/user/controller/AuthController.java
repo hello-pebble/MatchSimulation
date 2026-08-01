@@ -1,5 +1,6 @@
 package com.pebble.mvp.user.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.pebble.mvp.user.domain.User;
 import com.pebble.mvp.user.dto.AuthDtos.LoginRequest;
 import com.pebble.mvp.user.dto.AuthDtos.LoginResponse;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "회원/인증", description = "회원가입, 로그인(JWT 발급), 내 정보")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

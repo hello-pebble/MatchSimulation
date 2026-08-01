@@ -1,5 +1,6 @@
 package com.pebble.mvp.notification.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.pebble.mvp.notification.dto.NotificationDtos.NotificationResponse;
 import com.pebble.mvp.notification.service.NotificationService;
 import com.pebble.mvp.user.domain.User;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Tag(name = "알림", description = "내 알림 조회")
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
