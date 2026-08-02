@@ -39,6 +39,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/signup", "/api/auth/login").permitAll()
                         .requestMatchers("/", "/*.html", "/favicon.ico").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // WebSocket 핸드셰이크는 ChatHandshakeInterceptor가 토큰 파라미터로 직접 인증한다
+                        .requestMatchers("/ws/**").permitAll()
                         // H2 콘솔은 DispatcherServlet 밖의 별도 서블릿 — 명시적 경로 매처 필요
                         .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/h2-console/**")).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

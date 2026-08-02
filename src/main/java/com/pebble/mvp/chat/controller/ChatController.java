@@ -5,6 +5,7 @@ import com.pebble.mvp.chat.dto.ChatDtos.ChatRoomResponse;
 import com.pebble.mvp.chat.dto.ChatDtos.ChatSendRequest;
 import com.pebble.mvp.chat.service.ChatPollRegistry;
 import com.pebble.mvp.chat.service.ChatService;
+import com.pebble.mvp.chat.websocket.ChatSessionRegistry;
 import com.pebble.mvp.user.domain.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ public class ChatController {
 
     private final ChatService chatService;
     private final ChatPollRegistry chatPollRegistry;
+    private final ChatSessionRegistry chatSessionRegistry;
 
     @GetMapping("/rooms")
     public List<ChatRoomResponse> myRooms(@AuthenticationPrincipal User me) {
@@ -40,6 +42,8 @@ public class ChatController {
         ChatMessageResponse sent = chatService.send(me, matchId, request.content());
         // send()의 트랜잭션이 커밋된 뒤 대기자를 깨운다 — 커밋 전 조회로 메시지를 놓치지 않게
         chatPollRegistry.publish(matchId, chatService);
+        // WebSocket으로 수신 중인 세션에도 즉시 push (수신 경로 교차 호환)
+        chatSessionRegistry.broadcast(matchId, sent);
         return sent;
     }
 
