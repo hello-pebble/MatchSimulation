@@ -53,7 +53,7 @@
 | 5-1 | 새로고침 + afterId 증분 | 메시지 모델·조회 계약 고정 | #12 |
 | 5-2 | Short Polling (3초) | 자동화, 빈 응답 90% 실측 | #13 |
 | 5-3 | Long Polling (서버 대기) | 요청 수 1/5, 지연 ≈ 0 | 본 단계 |
-| 다음 | WebSocket | 양방향 실시간 (향후 과제) | - |
+| 6 | WebSocket | 양방향 실시간 — [phase6_websocket_report.md](phase6_websocket_report.md) | #16 |
 
 ## 6. 동작 화면
 

@@ -89,6 +89,7 @@
       <select id="c-mode" style="flex:0 0 auto;width:auto">
         <option value="short">Short Polling (3초)</option>
         <option value="long">Long Polling (서버 대기 20초)</option>
+        <option value="ws">WebSocket (실시간 연결 유지)</option>
       </select>
       <button id="c-poll" onclick="togglePolling()" style="background:#2e9e5b">자동 수신 시작</button>
     </div>
@@ -161,12 +162,13 @@ function appendMessages(list, reset) {
 }
 async function loadRooms() { await call('GET', '/api/chat/rooms'); }
 // --- 자동 수신: Short Polling(2단계, 3초 주기) / Long Polling(3단계, 서버 대기) ---
-let pollTimer = null, longActive = false, pollCount = 0, pollEmpty = 0, pollReceived = 0;
+let pollTimer = null, longActive = false, chatWs = null, pollCount = 0, pollEmpty = 0, pollReceived = 0;
 
-function pollingActive() { return pollTimer !== null || longActive; }
+function pollingActive() { return pollTimer !== null || longActive || chatWs !== null; }
 function stopPolling(msg) {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   longActive = false;
+  if (chatWs) { const ws = chatWs; chatWs = null; ws.close(); }
   const btn = document.getElementById('c-poll');
   btn.textContent = '자동 수신 시작';
   btn.style.background = '#2e9e5b';
@@ -178,7 +180,9 @@ function togglePolling() {
   const btn = document.getElementById('c-poll');
   btn.textContent = '자동 수신 중지';
   btn.style.background = '#c0392b';
-  if (v('c-mode') === 'long') {
+  if (v('c-mode') === 'ws') {
+    openWebSocket();
+  } else if (v('c-mode') === 'long') {
     longActive = true;
     chatStatus('Long Polling 시작 — 서버가 새 메시지가 생길 때까지 최대 20초 대기');
     longPollLoop();
@@ -198,6 +202,21 @@ async function pollOnce() {
   if (list.length === 0) pollEmpty++;
   else { pollReceived += list.length; appendMessages(list, false); }
   pollStatus('Short Polling');
+}
+// --- WebSocket (4단계): 연결 1개 유지, 서버가 즉시 push + 전송도 같은 연결로 ---
+function openWebSocket() {
+  const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+  const ws = new WebSocket(proto + location.host + '/ws/chat?matchId=' + v('c-match') + '&token=' + encodeURIComponent(token));
+  ws.onopen = () => chatStatus('WebSocket 연결됨 — 새 메시지를 서버가 즉시 push합니다 (요청 0회)');
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.error) { chatStatus('전송 오류: ' + m.error); return; }
+    if (m.id > chatLastId) { pollReceived++; appendMessages([m], false); }
+    chatStatus('WebSocket 수신 중 — 새 메시지 ' + pollReceived + '건 (연결 유지, 폴링 요청 0회)');
+  };
+  ws.onclose = () => { if (chatWs === ws) { chatWs = null; stopPolling('WebSocket 연결이 종료되었습니다.'); } };
+  ws.onerror = () => chatStatus('WebSocket 오류 — 토큰/권한(ACCEPTED 매칭 참여자)을 확인하세요.');
+  chatWs = ws;
 }
 async function longPollLoop() {
   while (longActive) {
@@ -230,6 +249,12 @@ async function refreshChat() {
   }
 }
 async function sendChat() {
+  // WebSocket 모드면 같은 연결로 전송 — 내 메시지도 push로 돌아온다 (양방향)
+  if (chatWs && chatWs.readyState === WebSocket.OPEN) {
+    chatWs.send(JSON.stringify({ content: v('c-input') }));
+    document.getElementById('c-input').value = '';
+    return;
+  }
   const sent = await call('POST', '/api/chat/' + v('c-match') + '/messages', { content: v('c-input') });
   if (sent && sent.id) {
     document.getElementById('c-input').value = '';

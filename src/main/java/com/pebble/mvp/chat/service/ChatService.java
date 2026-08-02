@@ -68,8 +68,8 @@ public class ChatService {
                 .toList();
     }
 
-    /** 매칭이 존재하고, ACCEPTED 상태이며, 내가 참여자인지 검증한다. */
-    private void verifyParticipant(User me, Long matchId) {
+    /** 매칭이 존재하고, ACCEPTED 상태이며, 내가 참여자인지 검증한다. (WebSocket 핸드셰이크에서도 재사용) */
+    public void verifyParticipant(User me, Long matchId) {
         MatchRecord record = matchRecordRepository.findById(matchId)
                 .orElseThrow(() -> ApiException.notFound("매칭을 찾을 수 없습니다: " + matchId));
         boolean participant = Objects.equals(record.getRequesterId(), me.getId())
