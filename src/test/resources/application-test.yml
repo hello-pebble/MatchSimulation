@@ -1,0 +1,11 @@
+# 테스트 전용 데이터소스.
+# 운영은 PostgreSQL이지만, Docker 없이도 전체 스위트가 돌도록 기본 테스트는
+# PostgreSQL 호환 모드(MODE=PostgreSQL)의 H2를 쓴다. 마이그레이션은 두 DB 공통
+# 문법으로 작성되어 있고, 실제 PostgreSQL 대상 검증은 PostgresMigrationIT가 맡는다
+# (Docker가 없으면 그 테스트만 스킵된다).
+spring:
+  datasource:
+    url: jdbc:h2:mem:admincore_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:

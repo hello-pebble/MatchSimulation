@@ -4,11 +4,16 @@ spring:
   threads:
     virtual:
       enabled: true   # Java 21 Virtual Threads
+  # 로컬 개발용 PostgreSQL — docker compose up -d db 로 기동한다.
+  # 운영/배포 환경에서는 SPRING_DATASOURCE_* 환경변수로 덮어쓴다.
   datasource:
-    url: jdbc:h2:mem:admincoredb;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://localhost:5432/admincore
+    driver-class-name: org.postgresql.Driver
+    username: admincore
+    password: admincore
+    hikari:
+      pool-name: admincore-pool
+      maximum-pool-size: 10
   jpa:
     hibernate:
       ddl-auto: validate   # 스키마는 Flyway(db/migration)가 소유, Hibernate는 검증만
@@ -17,11 +22,6 @@ spring:
     cache-names: matchStats
     caffeine:
       spec: expireAfterWrite=60s
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-
 server:
   port: 8080
 

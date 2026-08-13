@@ -84,6 +84,8 @@ Base URL: `http://localhost:8080` · 모든 관리자 API는 관리자 토큰 `X
 
 ## 3. 매칭 통계 집계 동작
 
+저장소는 PostgreSQL이며, 로컬에서는 `docker compose up -d db`로 띄운다.
+
 집계는 **DB의 GROUP BY**가 수행하고, 애플리케이션은 결과 행을 Map으로 옮기기만 한다.
 
 | 항목 | 쿼리 | 사용 인덱스 |

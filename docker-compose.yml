@@ -1,0 +1,43 @@
+# 로컬 개발용 PostgreSQL.
+#   docker compose up -d db          # DB만 기동 → 앱은 ./gradlew bootRun 으로 로컬 실행
+#   docker compose --profile app up  # DB + 앱 컨테이너를 함께 기동
+#   docker compose down -v           # 데이터 볼륨까지 삭제 (스키마/시드 초기화)
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: admincore-db
+    environment:
+      POSTGRES_DB: admincore
+      POSTGRES_USER: admincore
+      POSTGRES_PASSWORD: admincore
+      # 한글 데이터 정렬/비교를 위한 초기화 옵션
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - admincore-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admincore -d admincore"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 앱까지 컨테이너로 띄우고 싶을 때만 사용 (profile: app).
+  # 컨테이너 네트워크 안에서는 DB 호스트가 localhost가 아니라 서비스명 db 이다.
+  app:
+    profiles: ["app"]
+    build: .
+    container_name: admincore-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/admincore
+      SPRING_DATASOURCE_USERNAME: admincore
+      SPRING_DATASOURCE_PASSWORD: admincore
+      APP_JWT_SECRET: local-dev-only-secret-key-change-me-32bytes-min!!
+    ports:
+      - "8080:8080"
+
+volumes:
+  admincore-pgdata:

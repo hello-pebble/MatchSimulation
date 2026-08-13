@@ -5,7 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,13 +39,18 @@ class FlywayMigrationTest {
 
     @Test
     void 통계_집계_컬럼에_인덱스가_생성된다() {
-        List<Map<String, Object>> indexes = jdbcTemplate.queryForList(
-                "select index_name from information_schema.indexes where table_name = 'MATCH_RECORDS'");
-        assertThat(indexes)
-                .extracting(row -> String.valueOf(row.get("INDEX_NAME")).toUpperCase())
+        // information_schema.indexes는 H2 전용이라 JDBC 표준 메타데이터로 조회한다
+        // (PostgreSQL/H2 어느 쪽에서 돌든 동일하게 동작).
+        assertThat(indexNamesOf("match_records"))
                 .contains("IDX_MATCH_RECORDS_CREATED_AT",
                         "IDX_MATCH_RECORDS_STATUS",
                         "IDX_MATCH_RECORDS_REQUESTER_ID");
+    }
+
+    @Test
+    void 문의_알림_조회_컬럼에_인덱스가_생성된다() {
+        assertThat(indexNamesOf("qna")).contains("IDX_QNA_STATUS_CREATED_AT");
+        assertThat(indexNamesOf("notifications")).contains("IDX_NOTIFICATIONS_CREATED_AT");
     }
 
     @Test
@@ -51,5 +59,26 @@ class FlywayMigrationTest {
         Long matches = jdbcTemplate.queryForObject("select count(*) from match_records", Long.class);
         assertThat(users).isEqualTo(21);
         assertThat(matches).isEqualTo(30);
+    }
+
+    private List<String> indexNamesOf(String table) {
+        return jdbcTemplate.execute((java.sql.Connection connection) -> {
+            List<String> names = new ArrayList<>();
+            for (String candidate : new String[]{table, table.toUpperCase(Locale.ROOT)}) {
+                try (ResultSet rs = connection.getMetaData()
+                        .getIndexInfo(null, null, candidate, false, false)) {
+                    while (rs.next()) {
+                        String name = rs.getString("INDEX_NAME");
+                        if (name != null) {
+                            names.add(name.toUpperCase(Locale.ROOT));
+                        }
+                    }
+                }
+                if (!names.isEmpty()) {
+                    break;
+                }
+            }
+            return names;
+        });
     }
 }

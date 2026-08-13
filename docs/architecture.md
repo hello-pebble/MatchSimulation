@@ -1,6 +1,6 @@
 # AdminCore 아키텍처 설계서
 
-대상 버전: Java 21 / Spring Boot 4.1.x / H2 In-Memory DB
+대상 버전: Java 21 / Spring Boot 4.1.x / PostgreSQL 17
 
 본 문서는 운영 관리자 콘솔 백엔드 **AdminCore**의 아키텍처 설계서입니다.
 기능/API 명세는 `docs/admin_mode.md`를 참조하십시오.
@@ -18,7 +18,7 @@
 | :--- | :--- | :--- |
 | Language | Java 21 (LTS) | Record 기반 DTO, Virtual Threads 활성화 |
 | Framework | Spring Boot 4.1.0 (Spring Framework 7) | `spring-boot-starter-webmvc` |
-| Persistence | Spring Data JPA + H2 In-Memory DB | 스키마 소유는 **Flyway**, Hibernate는 `ddl-auto=validate` |
+| Persistence | Spring Data JPA + **PostgreSQL 17** (로컬은 Docker Compose) | 스키마 소유는 **Flyway**, Hibernate는 `ddl-auto=validate` |
 | 인증 | Spring Security + JWT(HS256) + BCrypt | `X-AUTH-TOKEN` 헤더, 세션 STATELESS |
 | 캐시 | Caffeine (`matchStats`, TTL 60초) | 매칭 상태 변경 시 `@CacheEvict` |
 | 문서 | springdoc-openapi | `/swagger-ui.html` |
@@ -70,11 +70,11 @@ graph TD
         MR[(MatchRecordRepository<br/>집계 쿼리 포함)]
         QR[(QnaRepository)]
         NR[(NotificationRepository)]
-        H2[(H2 In-Memory DB<br/>Flyway 마이그레이션 + 시드 데이터)]
+        PG[(PostgreSQL<br/>Flyway 마이그레이션 + 시드 데이터)]
     end
 
     SVC --> UR & MR & QR & NR
-    UR & MR & QR & NR --> H2
+    UR & MR & QR & NR --> PG
 ```
 
 ## 3. 패키지 구조 — 기능별 모듈(package-by-feature)
@@ -89,7 +89,7 @@ com.pebble.admincore
 │   ├── PageResponse.java             # 페이징 응답 공통 포맷
 │   └── config/                       # SecurityConfig, CacheConfig, OpenApiConfig
 ├── config/
-│   └── DataInitializer.java          # H2 시드 데이터 적재 (CommandLineRunner)
+│   └── DataInitializer.java          # 최초 기동 시 시드 데이터 적재 (CommandLineRunner)
 ├── user/                             # 회원 모듈 (계정·인증·상태 관리)
 │   ├── controller/AuthController     # 회원가입 / 로그인 / 내 정보
 │   ├── security/  JwtProvider, JwtAuthFilter
@@ -124,7 +124,7 @@ com.pebble.admincore
 | `NotificationService` | 전체 공지/개별 알림 발송, 발송 이력 조회, 내부 알림(`notify`)은 호출자 트랜잭션에 참여 |
 | `AdminStatsService` | **DB GROUP BY 집계 결과를 조립**하고 60초 캐시에 담는다 |
 | `MatchExpiryScheduler` | 7일 무응답 `REQUESTED` → `EXPIRED` 전이 + 요청자 알림 + 통계 캐시 무효화 |
-| `DataInitializer` | 기동 시 관리자 1명 + 회원 20명 + 매칭/문의/알림 샘플 적재 |
+| `DataInitializer` | 비어 있는 DB에 한해 관리자 1명 + 회원 20명 + 매칭/문의/알림 샘플 적재 (회원이 있으면 스킵) |
 
 ## 5. 매칭 통계 집계 설계
 
@@ -228,6 +228,23 @@ erDiagram
 | V3 | *(결번)* 사용자 모드 채팅 테이블 — 관리자 전용 전환으로 제거, 번호는 재사용하지 않음 |
 | V4 | 통계/목록 조회 인덱스 |
 
+마이그레이션은 **PostgreSQL과 H2 공통 문법**으로 작성한다. 열거형 컬럼은 DB 고유
+enum 타입 대신 `varchar` + 명명된 `check` 제약(`ck_users_role` 등)으로 표현하며,
+값을 추가할 때는 제약을 교체한다(V2가 그 예). 이렇게 두면 운영은 PostgreSQL로,
+기본 테스트 스위트는 Docker 없이 H2(PostgreSQL 호환 모드)로 돌릴 수 있다.
+
+### 6.1 데이터소스 구성
+
+| 환경 | DB | 설정 |
+| :--- | :--- | :--- |
+| 로컬 실행 | PostgreSQL 17 (Docker Compose `db` 서비스) | `application.yml` 기본값 — `localhost:5432/admincore` |
+| 배포 | PostgreSQL | `SPRING_DATASOURCE_URL` / `_USERNAME` / `_PASSWORD` 환경변수로 덮어쓰기 |
+| 기본 테스트 | H2 (`MODE=PostgreSQL`) | `test` 프로파일 (`application-test.yml`) — Docker 불필요 |
+| 실 DB 검증 | PostgreSQL (Testcontainers) | `PostgresMigrationIT` — Docker 없으면 자동 스킵 |
+
+Flyway 12는 DB별 지원 모듈이 분리되어 있어 `flyway-database-postgresql` 런타임
+의존성이 필요하다(없으면 기동 시 `Unsupported Database: PostgreSQL`).
+
 ## 7. 인증·인가 흐름
 
 ```mermaid
@@ -259,7 +276,7 @@ sequenceDiagram
 
 | 단계 | 내용 |
 | :--- | :--- |
-| DB 전환 | H2 → PostgreSQL. Flyway가 스키마를 소유하므로 datasource 교체 + 마이그레이션 방언 점검 |
+| 운영 DB | 커넥션 풀 튜닝, 읽기 전용 복제본 분리, 백업/복구 절차 |
 | 매칭 데이터 인입 | 외부 시스템의 매칭 이벤트 수집 경로를 `matching` 모듈에 추가 |
 | 감사 로그 | 관리자 액션(상태 변경·답변·발송)을 별도 테이블에 기록 |
 | 권한 세분화 | ADMIN 단일 롤 → 운영/CS/조회 전용 역할 분리 |

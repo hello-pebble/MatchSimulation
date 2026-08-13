@@ -6,11 +6,28 @@
 | :--- | :--- |
 | JDK | 21 이상 |
 | Gradle | Wrapper 포함 (별도 설치 불필요, Gradle 9.0) |
+| Docker | PostgreSQL 기동용 (Compose v2) |
 
 ## 2. 실행
 
 ```bash
+docker compose up -d db    # PostgreSQL 17 기동 → localhost:5432
 ./gradlew bootRun          # (Windows: gradlew.bat bootRun)
+```
+
+DB 컨테이너 상태 확인·정리:
+
+```bash
+docker compose ps
+docker compose logs -f db
+docker compose down        # 컨테이너만 정지 (데이터 유지)
+docker compose down -v     # 데이터 볼륨까지 삭제 → 다음 기동 시 스키마/시드 재생성
+```
+
+앱까지 컨테이너로 띄우려면:
+
+```bash
+docker compose --profile app up --build
 ```
 
 또는 빌드 후 jar 실행:
@@ -20,9 +37,11 @@
 java -jar build/libs/AdminCore-1.0-SNAPSHOT.jar
 ```
 
-기동하면 Flyway가 스키마를 만들고(V1·V2·V4), H2 In-Memory DB에 시드 데이터
-(관리자 1명 + 회원 20명 + 매칭 30건 + 문의 3건 + 알림 2건)가 자동 적재됩니다.
-재기동 시 초기화됩니다.
+기동하면 Flyway가 스키마를 만들고(V1·V2·V4), 비어 있는 DB라면 시드 데이터
+(관리자 1명 + 회원 20명 + 매칭 30건 + 문의 3건 + 알림 2건)가 적재됩니다.
+**PostgreSQL은 볼륨에 데이터가 남으므로 재기동해도 초기화되지 않습니다** —
+`DataInitializer`가 회원이 이미 있으면 시드를 건너뜁니다.
+초기 상태로 되돌리려면 `docker compose down -v`.
 
 ## 3. 접속 주소
 
@@ -30,7 +49,7 @@ java -jar build/libs/AdminCore-1.0-SNAPSHOT.jar
 | :--- | :--- |
 | http://localhost:8080/admin.html | 관리자 콘솔 (통계 뷰어 포함) |
 | http://localhost:8080/swagger-ui.html | Swagger API 문서 (Authorize에 JWT 입력) |
-| http://localhost:8080/h2-console | H2 콘솔 — JDBC URL `jdbc:h2:mem:admincoredb`, user `sa`, 비밀번호 없음 |
+| `psql -h localhost -U admincore -d admincore` | DB 직접 접속 (비밀번호 `admincore`) — 컨테이너 안이면 `docker compose exec db psql -U admincore -d admincore` |
 
 ## 4. 샘플 계정
 
@@ -88,6 +107,12 @@ curl -s localhost:8080/api/admin/stats/matches -H "X-AUTH-TOKEN: $TOKEN" | jq
 | `MatchExpirySchedulerTest` | 7일 경과 REQUESTED만 EXPIRED 전이 + 요청자 알림 |
 | `OpenApiIntegrationTest` | OpenAPI 문서에 관리자 경로 노출 / 사용자 모드 경로 부재 |
 | `JwtProviderTest` | JWT 발급·검증 단위 테스트 |
+| `PostgresMigrationIT` | **실 PostgreSQL**(Testcontainers) 대상 마이그레이션·제약·인덱스·집계 검증 |
+
+기본 테스트는 PostgreSQL 호환 모드(`MODE=PostgreSQL`)의 H2로 돌기 때문에 Docker
+없이도 전체 스위트가 통과합니다. `PostgresMigrationIT`만 Docker가 있을 때 실행되고,
+없으면 자동으로 스킵됩니다 — 실 DB 대상 검증을 하려면 Docker를 켠 상태에서
+`./gradlew test`를 돌리세요.
 
 ## 8. 통계 쿼리 확인 (선택)
 
@@ -102,4 +127,8 @@ logging:
 
 `GET /api/admin/stats/matches` 호출 시 `group by`가 포함된 3개 쿼리만 나가고,
 60초 이내 재호출은 캐시 적중으로 쿼리가 나가지 않아야 합니다.
-실행계획은 H2 콘솔에서 `explain analyze select ...`로 확인할 수 있습니다.
+실행계획은 psql에서 확인합니다:
+
+```sql
+explain analyze select status, count(*) from match_records group by status;
+```
