@@ -1,16 +1,20 @@
-# MatchSimulation
+# AdminHub
 
-매칭(User) 서비스 백엔드 + 관리자(Admin) 모드 프로젝트입니다.
-Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실행·테스트할 수 있으며,
-외부 AI 매칭 모델·외부 서버를 설정만으로 연동할 수 있는 구조로 설계되었습니다.
+운영 관리자 콘솔 백엔드입니다. 회원 관리, Q&A 답변, 알림 발송, 매칭 현황 통계를
+하나의 관리자 API/콘솔로 제공합니다.
+Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반이라 외부 의존 없이 로컬에서 즉시 실행·테스트할 수 있습니다.
+
+> 이 저장소는 매칭 서비스 프로젝트(MatchSimulation)의 사용자 모드를 걷어내고
+> **관리자 모드만 남겨 고도화**하는 방향으로 재정의되었습니다.
+> 전환 이전의 단계별 기록은 `docs/phase*.md`에 그대로 보존되어 있습니다.
 
 ## 1. 프로젝트 개요
 
 | 항목 | 내용 |
 | :--- | :--- |
-| 프로젝트명 | MatchSimulation |
-| 개발 단계 | Phase 6 (1:1 채팅 — 새로고침 → Short Polling → Long Polling → WebSocket 완료) |
-| 아키텍처 | 기능별 모듈(package-by-feature) 구조 + 매칭 엔진 Interface/Adapter 확장 구조 |
+| 프로젝트명 | AdminHub |
+| 성격 | 운영 관리자 전용 백엔드 (사용자 대면 기능 없음) |
+| 아키텍처 | 기능별 모듈(package-by-feature), 관리자 API 단일 진입점 + 공용 도메인 |
 
 ## 2. 기술 스택
 
@@ -20,49 +24,50 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반으로 로컬에서 즉시 실
 | 프레임워크 | Spring Boot 4.1.0 (Spring Framework 7) |
 | 저장소 | H2 In-Memory DB + Spring Data JPA + **Flyway 마이그레이션**(`db/migration`, ddl-auto=validate) |
 | 빌드 도구 | Gradle 9 (Wrapper) |
-| 주요 라이브러리 | spring-boot-starter-webmvc, restclient, validation, security, Lombok, JUnit 5 |
 | 인증 | Spring Security + **JWT**(HS256, 60분) + BCrypt — `X-AUTH-TOKEN` 헤더 |
+| 문서 | springdoc-openapi (Swagger UI) |
+| 캐시/배치 | Caffeine(TTL 60초) + `@Scheduled` 만료 배치 |
 
 ## 3. 주요 기능
 
 | 분류 | 상세 |
 | :--- | :--- |
-| 회원 | 회원가입(PENDING) / 로그인(더미 토큰) / 내 정보 |
-| 매칭 | 규칙 기반 추천(지역·나이·직군 점수), 매칭 요청/수락/거절, 내 매칭 이력, 7일 무응답 자동 만료 배치 |
-| 채팅 | 매칭 성사(ACCEPTED) 상대와 1:1 대화 — afterId 증분 조회, 새로고침/Short Polling/Long Polling/**WebSocket** 4단계 수신 진화 |
-| Q&A | 문의 등록, 내 문의 조회 |
-| 알림 | 전체 공지 + 개별 알림 조회 |
-| **관리자** | 회원 목록/상태 변경(승인·정지), Q&A 답변, 알림 등록(전체/개별), 일별·성별·상태별 매칭 통계 |
-| 확장성 | `MatchingEngine` 인터페이스 — `matching.engine=external-ai` 설정만으로 외부 AI 서버 연동 |
+| 인증/인가 | JWT 로그인, `/api/admin/**`은 `hasRole('ADMIN')` — 미달 시 403 JSON |
+| 회원 관리 | 페이징 회원 목록, 상태 변경(`PENDING`/`ACTIVE`/`SUSPENDED`) + 대상 회원 알림 발송(동일 트랜잭션) |
+| Q&A 관리 | 전체/상태별 문의 목록(페이징), 답변 등록 → `ANSWERED` |
+| 알림 발송 | 전체 공지 또는 개별 회원 알림 생성, 발송 이력 조회 |
+| 매칭 통계 | 전체/성사 건수, 성사율, 일별·성별·상태별 집계 — **DB GROUP BY 집계** + 60초 캐시 |
+| 운영 배치 | 7일 무응답 매칭 자동 만료(`EXPIRED`) + 요청자 알림 + 통계 캐시 무효화 |
 
 ## 4. 모듈 구조 (package-by-feature)
 
-각 기능을 독립 모듈로 분리했으며, 모듈 내부는 `controller / service / repository / domain / dto`로 구성됩니다.
-
 ```
-com.pebble.mvp
-├── common        # 공통 예외, JSON 에러 응답
+com.pebble.adminhub
+├── common        # 공통 예외/에러 응답, 페이징 정책, Security·Cache·OpenAPI 설정
 ├── config        # H2 시드 데이터 초기화
-├── user          # 회원가입 / 로그인(더미 토큰) / 계정
-├── matching      # 추천, 매칭 요청/응답, 매칭 엔진(AI 연동 접점: matching.engine)
-├── chat          # 매칭 성사 상대와 1:1 채팅 (afterId 증분 조회 + Long Polling + WebSocket)
-├── qna           # 1:1 문의 (유저 등록, 관리자 답변)
-├── notification  # 공지/알림
-└── admin         # 관리자 회원관리 / QnA / 알림등록 / 매칭 통계
+├── user          # 계정 도메인 + 인증(JWT) + 회원 상태 변경
+├── qna           # 문의 도메인 + 관리자 답변
+├── notification  # 알림 도메인 + 발송/이력
+├── matching      # 매칭 기록(통계 입력 데이터) + 만료 배치
+└── admin         # 관리자 API 단일 진입점 + 통계 집계
 ```
 
-## 5. 주요 API 요약
+관리자 API는 `admin` 모듈이 단일 진입점이며, 실제 도메인 로직은 각 기능 모듈의
+서비스가 소유합니다. `matching` 모듈은 **쓰기 경로 없이** 통계의 입력 데이터와
+만료 배치만 담당합니다.
+
+## 5. API 요약
 
 | 구분 | 메서드/경로 | 설명 |
 | :--- | :--- | :--- |
-| 인증 | POST /api/auth/signup, /login · GET /api/auth/me | 가입(PENDING) / 로그인(토큰) / 내 정보 |
-| 매칭 | GET /api/matching/recommendations · POST /api/matching/requests, /requests/{id}/respond · GET /api/matching/my | 추천 / 요청 / 수락·거절 / 내 매칭 |
-| 채팅 | GET /api/chat/rooms · POST·GET /api/chat/{matchId}/messages(?afterId=N) · GET .../messages/poll · WS /ws/chat | 대화방 목록 / 전송 / 증분 조회 / Long Polling / WebSocket |
-| QnA | POST /api/qna · GET /api/qna/my | 문의 등록 / 내 문의 |
-| 알림 | GET /api/notifications/my | 내 알림(전체 공지 + 개별) |
-| 관리자 | GET·PATCH /api/admin/users(/{id}/status) · GET·POST /api/admin/qna(/{id}/answer) · GET·POST /api/admin/notifications · GET /api/admin/stats/matches | 회원관리 / QnA 답변 / 알림 등록 / 매칭 통계 |
+| 인증 | POST /api/auth/signup, /login · GET /api/auth/me | 가입(PENDING) / 로그인(JWT) / 내 정보 |
+| 회원 관리 | GET /api/admin/users · PATCH /api/admin/users/{id}/status | 목록(페이징) / 승인·정지 |
+| Q&A | GET /api/admin/qna · POST /api/admin/qna/{id}/answer | 목록(상태 필터·페이징) / 답변 |
+| 알림 | GET·POST /api/admin/notifications | 발송 이력 / 공지·개별 알림 발송 |
+| 통계 | GET /api/admin/stats/matches | 전체·성사·성사율 + 일별/성별/상태별 |
 
-인증이 필요한 API는 로그인 응답의 토큰을 `X-AUTH-TOKEN` 헤더로 전달합니다. 상세 명세는 [docs/user_mode.md](docs/user_mode.md), [docs/admin_mode.md](docs/admin_mode.md) 참조.
+보호 API는 로그인 응답의 JWT를 `X-AUTH-TOKEN` 헤더로 전달합니다.
+상세 명세는 [docs/admin_mode.md](docs/admin_mode.md) 참조.
 
 ## 6. 빠른 시작
 
@@ -73,27 +78,27 @@ com.pebble.mvp
 
 | 접속 주소 | 설명 |
 | :--- | :--- |
-| /index.html | 회원 테스트 콘솔 |
 | /admin.html | 관리자 콘솔 (통계 뷰어 포함) |
-| /h2-console | H2 DB 콘솔 (`jdbc:h2:mem:matchdb`, user `sa`) |
 | /swagger-ui.html | Swagger API 문서 (Authorize에 JWT 입력 후 실호출 가능) |
+| /h2-console | H2 DB 콘솔 (`jdbc:h2:mem:adminhubdb`, user `sa`) |
 
-샘플 계정: 관리자 `admin@match.com` / `admin1234`, 회원 `male1~10`·`female1~10@match.com` / `pass1234`
+샘플 계정: 관리자 `admin@match.com` / `admin1234`
 
 ## 7. 문서
 
 | 문서 | 내용 |
 | :--- | :--- |
-| [docs/phase2_plan.md](docs/phase2_plan.md) | Phase 2 시작 전 계획 문서 (목표, 설계 방향) |
-| [docs/phase2_report.md](docs/phase2_report.md) | Phase 2 완료 보고 문서 (구현 결과, 검증 내역) |
-| [docs/architecture.md](docs/architecture.md) | 아키텍처 설계서 (모듈 구조, 컴포넌트 역할, AI 연동 접점) |
-| [docs/usecase.md](docs/usecase.md) | 유즈케이스 문서 (사용자/관리자 모드별 유즈케이스 + 시나리오) |
-| [docs/user_mode.md](docs/user_mode.md) | 사용자 모드 문서 (기능 명세 + API + 콘솔 시나리오) |
-| [docs/admin_mode.md](docs/admin_mode.md) | 관리자 모드 문서 (기능 명세 + API + AI 연동 계약) |
+| [docs/admin_mode.md](docs/admin_mode.md) | 관리자 모드 문서 (기능 명세 + API + 콘솔 시나리오) |
+| [docs/architecture.md](docs/architecture.md) | 아키텍처 설계서 (모듈 구조, 통계 집계, 인증 흐름, ERD) |
+| [docs/usecase.md](docs/usecase.md) | 유즈케이스 문서 |
 | [docs/local_guide.md](docs/local_guide.md) | 로컬 실행 및 테스트 가이드 |
+| docs/phase*.md | 관리자 전용 전환 이전(MatchSimulation)의 단계별 계획/보고 기록 |
 
 ## 8. 향후 개발 계획
 
 | 단계 | 주요 작업 |
 | :--- | :--- |
-| 이후 | 외부 RDBMS(PostgreSQL) 전환, 외부 AI 매칭 서버 실연동, 운영 관측성(Actuator/메트릭) |
+| 저장소 | H2 → PostgreSQL 전환 (Flyway가 이미 스키마를 소유) |
+| 운영 | 관리자 액션 감사 로그, 권한 세분화(ADMIN 단일 롤 → 역할 분리) |
+| 조회 | 회원/문의 검색·필터, 통계 CSV export |
+| 관측성 | Actuator/메트릭, 통계 쿼리 실행계획 모니터링 |

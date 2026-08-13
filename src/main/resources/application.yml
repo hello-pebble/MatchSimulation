@@ -1,11 +1,11 @@
 spring:
   application:
-    name: MatchSimulation
+    name: AdminHub
   threads:
     virtual:
       enabled: true   # Java 21 Virtual Threads
   datasource:
-    url: jdbc:h2:mem:matchdb;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:adminhubdb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -21,12 +21,6 @@ spring:
     console:
       enabled: true
       path: /h2-console
-
-# 매칭 엔진 선택 — 외부 AI 서버 연동 시 external-ai로 변경
-matching:
-  engine: local        # local | external-ai
-  ai:
-    base-url: http://localhost:9090
 
 server:
   port: 8080
