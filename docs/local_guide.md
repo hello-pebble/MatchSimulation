@@ -17,7 +17,7 @@
 
 ```bash
 ./gradlew build
-java -jar build/libs/AdminHub-1.0-SNAPSHOT.jar
+java -jar build/libs/AdminCore-1.0-SNAPSHOT.jar
 ```
 
 기동하면 Flyway가 스키마를 만들고(V1·V2·V4), H2 In-Memory DB에 시드 데이터
@@ -30,7 +30,7 @@ java -jar build/libs/AdminHub-1.0-SNAPSHOT.jar
 | :--- | :--- |
 | http://localhost:8080/admin.html | 관리자 콘솔 (통계 뷰어 포함) |
 | http://localhost:8080/swagger-ui.html | Swagger API 문서 (Authorize에 JWT 입력) |
-| http://localhost:8080/h2-console | H2 콘솔 — JDBC URL `jdbc:h2:mem:adminhubdb`, user `sa`, 비밀번호 없음 |
+| http://localhost:8080/h2-console | H2 콘솔 — JDBC URL `jdbc:h2:mem:admincoredb`, user `sa`, 비밀번호 없음 |
 
 ## 4. 샘플 계정
 
@@ -77,7 +77,7 @@ curl -s localhost:8080/api/admin/stats/matches -H "X-AUTH-TOKEN: $TOKEN" | jq
 
 | 테스트 | 검증 내용 |
 | :--- | :--- |
-| `AdminHubApplicationTests` | 컨텍스트 로드 + 시드 데이터 + 통계 집계 |
+| `AdminCoreApplicationTests` | 컨텍스트 로드 + 시드 데이터 + 통계 집계 |
 | `AdminStatsAggregationTest` | DB GROUP BY 집계 결과가 독립 계산한 기대값과 일치 |
 | `CacheIntegrationTest` | 통계 캐시 적중 + 만료 배치 시 무효화 |
 | `PagingIntegrationTest` | 페이징/정렬/size 클램프/잘못된 정렬 필드 400 |

@@ -1,6 +1,6 @@
 # 관리자 모드 문서 (Admin Mode)
 
-대상: AdminHub의 전체 기능 — 회원관리, QnA 답변, 알림 발송, 매칭 현황 통계
+대상: AdminCore의 전체 기능 — 회원관리, QnA 답변, 알림 발송, 매칭 현황 통계
 콘솔: `http://localhost:8080/admin.html`
 
 기본 관리자 계정: `admin@match.com` / `admin1234`

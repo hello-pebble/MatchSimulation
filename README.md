@@ -1,4 +1,4 @@
-# AdminHub
+# AdminCore
 
 운영 관리자 콘솔 백엔드입니다. 회원 관리, Q&A 답변, 알림 발송, 매칭 현황 통계를
 하나의 관리자 API/콘솔로 제공합니다.
@@ -12,7 +12,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반이라 외부 의존 없이 �
 
 | 항목 | 내용 |
 | :--- | :--- |
-| 프로젝트명 | AdminHub |
+| 프로젝트명 | AdminCore |
 | 성격 | 운영 관리자 전용 백엔드 (사용자 대면 기능 없음) |
 | 아키텍처 | 기능별 모듈(package-by-feature), 관리자 API 단일 진입점 + 공용 도메인 |
 
@@ -42,7 +42,7 @@ Java 21 / Spring Boot 4.x / H2 In-Memory DB 기반이라 외부 의존 없이 �
 ## 4. 모듈 구조 (package-by-feature)
 
 ```
-com.pebble.adminhub
+com.pebble.admincore
 ├── common        # 공통 예외/에러 응답, 페이징 정책, Security·Cache·OpenAPI 설정
 ├── config        # H2 시드 데이터 초기화
 ├── user          # 계정 도메인 + 인증(JWT) + 회원 상태 변경
@@ -80,7 +80,7 @@ com.pebble.adminhub
 | :--- | :--- |
 | /admin.html | 관리자 콘솔 (통계 뷰어 포함) |
 | /swagger-ui.html | Swagger API 문서 (Authorize에 JWT 입력 후 실호출 가능) |
-| /h2-console | H2 DB 콘솔 (`jdbc:h2:mem:adminhubdb`, user `sa`) |
+| /h2-console | H2 DB 콘솔 (`jdbc:h2:mem:admincoredb`, user `sa`) |
 
 샘플 계정: 관리자 `admin@match.com` / `admin1234`
 

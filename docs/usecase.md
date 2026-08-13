@@ -63,7 +63,7 @@ graph LR
 ```mermaid
 sequenceDiagram
     actor AD as 관리자
-    participant S as AdminHub
+    participant S as AdminCore
     participant DB as DB
 
     AD->>S: UC-A0 로그인

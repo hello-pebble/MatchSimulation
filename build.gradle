@@ -3,7 +3,7 @@ plugins {
     id 'org.springframework.boot' version '4.1.0'
 }
 
-group = 'com.pebble.adminhub'
+group = 'com.pebble.admincore'
 version = '1.0-SNAPSHOT'
 
 java {

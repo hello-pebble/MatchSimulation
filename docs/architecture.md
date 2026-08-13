@@ -1,8 +1,8 @@
-# AdminHub 아키텍처 설계서
+# AdminCore 아키텍처 설계서
 
 대상 버전: Java 21 / Spring Boot 4.1.x / H2 In-Memory DB
 
-본 문서는 운영 관리자 콘솔 백엔드 **AdminHub**의 아키텍처 설계서입니다.
+본 문서는 운영 관리자 콘솔 백엔드 **AdminCore**의 아키텍처 설계서입니다.
 기능/API 명세는 `docs/admin_mode.md`를 참조하십시오.
 
 > **전환 배경** — 이 코드베이스는 매칭 서비스(MatchSimulation)의 사용자 모드와
@@ -80,8 +80,8 @@ graph TD
 ## 3. 패키지 구조 — 기능별 모듈(package-by-feature)
 
 ```
-com.pebble.adminhub
-├── AdminHubApplication.java
+com.pebble.admincore
+├── AdminCoreApplication.java
 ├── common/                           # 공통 인프라 모듈
 │   ├── ApiException.java             # 상태코드 포함 비즈니스 예외
 │   ├── GlobalExceptionHandler.java   # @RestControllerAdvice → JSON 에러 응답

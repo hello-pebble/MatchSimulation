@@ -1,11 +1,11 @@
 spring:
   application:
-    name: AdminHub
+    name: AdminCore
   threads:
     virtual:
       enabled: true   # Java 21 Virtual Threads
   datasource:
-    url: jdbc:h2:mem:adminhubdb;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:admincoredb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
